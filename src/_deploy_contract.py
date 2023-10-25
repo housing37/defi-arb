@@ -1,8 +1,10 @@
 from web3 import Web3, HTTPProvider
 from solc import compile_source
+import env
 
 # Connect to a local Ethereum node or a remote one
-w3 = Web3(HTTPProvider('http://localhost:8545'))
+#w3 = Web3(HTTPProvider('http://localhost:8545'))
+w3 = Web3(HTTPProvider(f'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'))
 
 # Read the Solidity contract source code from a .sol file
 #with open("HelloWorld.sol", "r") as file:
