@@ -1,3 +1,42 @@
+###############################
+# house_102323 (model house_091223)
+###############################
+## misc OSx
+*~
+.#.*
+\#.gitignore#
+*.DS_Store
+\#.env#
+\#__init__.py#
+__pycache__
+~$*
+
+## xcode workspace
+*.xcworkspace
+
+## hide site security
+#sites/
+
+## hide emebedded repos #
+house_tools/
+
+## hide logs #
+logs/
+
+## hide posts ##
+posts/
+
+## hide environmentals
+.env*
+
+## hide legacy helpers
+_legacy/
+
+## ignore folders ##
+#_*/
+
+#######################################
+#######################################
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
