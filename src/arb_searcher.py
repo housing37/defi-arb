@@ -18,58 +18,38 @@ import requests, json
 #------------------------------------------------------------#
 #   GLOBALS
 #------------------------------------------------------------#
-LST_CHAIN_IDs = ['ethereum', 'pulsechain']
-#LST_CHAIN_IDs = ['ethereum']
-LST_DEX_IDs_eth = ['uniswap', 'sushiswap', 'balancer', 'pancakeswap']
-LST_DEX_IDs_pc = ['pulsex']
-
-lst_pair_toks_cid = []
-lst_pair_toks = []
+#LST_CHAIN_IDs = ['ethereum', 'pulsechain']
+#LST_DEX_IDs_eth = ['uniswap', 'sushiswap', 'balancer', 'pancakeswap']
+#LST_DEX_IDs_pc = ['pulsex']
+#
+#lst_pair_toks_cid = []
+#lst_pair_toks = []
 NET_CALL_CNT = 0
-#LST_ALL_SYMBS = []
 
-run_time_start = None
+RUN_TIME_START = None
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
-def get_lps(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
+def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
     global NET_CALL_CNT
-    #if d_print: print('', cStrDivider, f'Getting pairs for T | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
-#    lst_t_pair_toks, lst_all_symbs = get_pairs_lst(t_addr, t_symb, plog=d_print)
-#    if d_print: print('', cStrDivider, f'Print pairs for T | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
-#    if d_print: [print(d) for d in lst_t_pair_toks]
-#    return list(lst_t_pair_toks)
-
     if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
-#    dict_all_symbs = get_pairs_lst(t_addr, t_symb, chain_id, {}, plog=d_print)
-    dict_all_symbs = get_pairs_lst(t_addr, t_symb, chain_id, {}, plog=False)
-            # NOTE: when starting with WETH, there is no pair that leads to chain_id = 'pulsechain'
-                
-#    if d_print: [print(k,dict_all_symbs[k]) for k in dict_all_symbs.keys()]
+    dict_all_symbs = scrape_dex_recursive(t_addr, t_symb, chain_id, {}, plog=False)
+
     print(f'... NET_CALL_CNT: {NET_CALL_CNT}')
     print()
     [print(k, dict_all_symbs[k][0:5]) for k in dict_all_symbs.keys()]
     print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...\n')
     return dict(dict_all_symbs)
 
-def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, run_time_start
+def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
+    global NET_CALL_CNT, RUN_TIME_START
     NET_CALL_CNT += 1
-    
-#    len_dict = len(DICT_ALL_SYMBS)
-#    if len_dict > 0:
-#        len_dict = len_dict * 40 - len_dict
-#    str_len = ''
-#    for x in range(0, len_dict):
-#        str_len += '-'
-#
-#    print(f'\n*NET_CALL_CNT: {NET_CALL_CNT}* _ {str_len}')
+
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
     time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
-    print(cStrDivider, f'NET_CALL_CNT: [{NET_CALL_CNT}] _ now: [{get_time_now()}] _ start: [{run_time_start}]', f'   {tok_symb}: {tok_addr}', cStrDivider, '', sep='\n')
-#    print(f'   {tok_symb}: {tok_addr}\n\n')
+    print(cStrDivider, f'NET_CALL_CNT: [{NET_CALL_CNT}] _ now: [{get_time_now()}] _ start: [{RUN_TIME_START}]', f'   {tok_symb}: {tok_addr}', cStrDivider, '', sep='\n')
     try:
         response = requests.get(url)
         pair_skip_chain_cnt = 0
@@ -99,32 +79,21 @@ def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
                     continue
                     
                 if _chain_id == chain_id:
-#                    if plog:
-#                        print(f'[{NET_CALL_CNT}]', v['chainId'],
-#                                v['dexId'],
-#                                v['baseToken']['symbol'],
-#                                v['quoteToken']['symbol'],
-#                                v['pairAddress'], f'[{NET_CALL_CNT}]')
-                
                     if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                         addr = v['baseToken']['address']
                         symb = v['baseToken']['symbol']
                         DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, price_usd]]]
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                        get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                        scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
                     elif v['baseToken']['address'] in DICT_ALL_SYMBS:
                         addr = v['baseToken']['address']
                         symb = v['baseToken']['symbol']
                         DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                         
                         lst_symbs = DICT_ALL_SYMBS[addr]
-#                        print(lst_symbs)
                         lst_quotes = lst_symbs[-1]
-#                        print(f'tok_addr req: {tok_addr}')
-#                        print(*lst_quotes, sep='\n')
                         append_qoute = True
                         for quote in lst_quotes:
-#                            print(quote)
                             if symb != quote[1]:
                                 if float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
                                     diff = float(quote[-1]) - float(price_usd)
@@ -132,15 +101,14 @@ def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
                                     str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
                                     if b_alert:
                                         print(f'FOUND price diff for base_tok: {addr} | {lst_symbs[0:5]} _ {quote}')
-    #                                print('', *DICT_ALL_SYMBS[addr][-1], sep='\n        ')
                                         print(f'''
-    price_usd = {price_usd}
-    diff = ${diff:,.2f} _ {str_alert}
-    base_tok_symb = {base_tok_symb}
-    quote_tok_symb = {quote_tok_symb}
-    _chain_id = {_chain_id}
-    dex_id = {dex_id} _ {labels}
-    pair_addr = {pair_addr}
+                                            price_usd = {price_usd}
+                                            diff = ${diff:,.2f} _ {str_alert}
+                                            base_tok_symb = {base_tok_symb}
+                                            quote_tok_symb = {quote_tok_symb}
+                                            _chain_id = {_chain_id}
+                                            dex_id = {dex_id} _ {labels}
+                                            pair_addr = {pair_addr}
 
                                             ''')
                             if pair_addr == quote[0]:
@@ -153,46 +121,13 @@ def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
                         symb = v['quoteToken']['symbol']
                         DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '-1']]]
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                        get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                        scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
                     elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
                         addr = v['quoteToken']['address']
                         DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         
             return DICT_ALL_SYMBS
-            
-#            for k,v in enumerate(data['pairs']):
-#                if v['chainId'] == chain_id:
-#                    if plog:
-#                        print(f'[{NET_CALL_CNT}]', v['chainId'],
-#                                v['dexId'],
-#                                v['baseToken']['symbol'],
-#                                v['quoteToken']['symbol'],
-#                                v['pairAddress'], f'[{NET_CALL_CNT}]')
-#
-#                    if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
-#                        addr = v['baseToken']['address']
-#                        symb = v['baseToken']['symbol']
-#                        DICT_ALL_SYMBS[addr] = [symb, v['chainId'], v['dexId']]
-#                        return get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-#                    if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
-#                        addr = v['quoteToken']['address']
-#                        symb = v['quoteToken']['symbol']
-#                        DICT_ALL_SYMBS[addr] = [symb, v['chainId'], v['dexId']]
-#                        return get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-#            return DICT_ALL_SYMBS
-#                pair_addr = v['pairAddress']
-#                liquid = -1 if 'liquidity' not in v else v['liquidity']['usd']
-#                chain_id = v['chainId']
-#                dex_id = v['dexId']
-#                labels = v['labels']
-#                price_usd = -1 if 'priceUsd' not in v else v['priceUsd']
-#                base_tok_addr = v['baseToken']['address']
-#                base_tok_symb = v['baseToken']['symbol']
-#                base_tok_name = v['baseToken']['name']
-#                quote_tok_addr = v['quoteToken']['address']
-#                quote_tok_symb = v['quoteToken']['symbol']
-#                quote_tok_name = v['quoteToken']['name']
         else:
             print(f"Request failed with status code {response.status_code}\n returning empty list")
             return []
@@ -277,6 +212,12 @@ def go_main():
 #    addr_atrop = '0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6' # 313 Atropa (AtropaContract) _ 'ATROPA'
 #    addr_tsfi = '0x4243568Fa2bbad327ee36e06c16824cAd8B37819'
 #    addr_caw = '0xf3b9569F82B18aEf890De263B84189bd33EBe452'
+    #addr_wenti = '0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc' # '问题 (问题) _ wenti'
+#    addr_bond = '0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38'
+#    st0_addr = '0x52a4682880E990ebed5309764C7BD29c4aE22deB' # 2,000,000 유 (YuContract) _ (ì = EC9CA0)
+#    st1_addr = '0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89' # 1 Di (DiContract) _ (ç¬¬ä½ = E7ACACE4BD9C)
+#    liq_tok_0 = '0xE63191967735C52f5de78CE2471759a9963Ce118' # 清导
+#    liq_tok_1 = '0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b' # ޖޮޔިސްދޭވޯހީ (write)
     addr_pdai = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
     addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
     addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
@@ -287,42 +228,29 @@ def go_main():
     
     c0 = 'ethereum'
     s0 = 'WETH (on ethereum)'
-    d0 = get_lps(t_addr=addr_weth_eth,
-                t_symb=s0,
-                chain_id=c0,
-                d_print=True)
+    d0 = search_for_arb(t_addr=addr_weth_eth,
+                        t_symb=s0,
+                        chain_id=c0,
+                        d_print=True)
 
     
     c1 = 'pulsechain'
     s1 = 'WPLS'
-    d1 = get_lps(t_addr=addr_wpls_pc,
-                t_symb=s1,
-                chain_id=c1,
-                d_print=True)
+    d1 = search_for_arb(t_addr=addr_wpls_pc,
+                        t_symb=s1,
+                        chain_id=c1,
+                        d_print=True)
 
     print()
     [print(k, d0[k][0:5]) for k in d0.keys()]
     print(f'{c0} _ start from {s0} _ unique tokens found: {len(d0.keys())} ...\n')
     [print(k, d1[k][0:5]) for k in d1.keys()]
     print(f'{c1} _ start from {s1} _ unique tokens found: {len(d1.keys())} ...\n')
-    
-#    [print(k, dict_all_symbs[k]) for k in dict_all_symbs.keys()]
-#    print(f'\nsymbs cnt: {len(dict_all_symbs.keys())} ... ')
-    #print(*dict_all_symbs, sep='\n')
-                
-    #addr_wenti = '0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc' # '问题 (问题) _ wenti'
-#    addr_bond = '0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38'
-#    st0_addr = '0x52a4682880E990ebed5309764C7BD29c4aE22deB' # 2,000,000 유 (YuContract) _ (ì = EC9CA0)
-#    st1_addr = '0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89' # 1 Di (DiContract) _ (ç¬¬ä½ = E7ACACE4BD9C)
-#    liq_tok_0 = '0xE63191967735C52f5de78CE2471759a9963Ce118' # 清导
-#    liq_tok_1 = '0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b' # ޖޮޔިސްދޭވޯހީ (write)
-#    w_sec = 0
-#    time.sleep(w_sec)
 
 if __name__ == "__main__":
     ## start ##
-    run_time_start = get_time_now()
-    print(f'\n\nRUN_TIME_START: {run_time_start}\n'+READ_ME)
+    RUN_TIME_START = get_time_now()
+    print(f'\n\nRUN_TIME_START: {RUN_TIME_START}\n'+READ_ME)
     lst_argv_OG, argv_cnt = read_cli_args()
     
     ## exe ##
@@ -332,6 +260,6 @@ if __name__ == "__main__":
         print_exception(e, debugLvl=0)
     
     ## end ##
-    print(f'\n\nRUN_TIME_START: {run_time_start}\nRUN_TIME_END:   {get_time_now()}\n')
+    print(f'\n\nRUN_TIME_START: {RUN_TIME_START}\nRUN_TIME_END:   {get_time_now()}\n')
 
 print('', cStrDivider, f'# END _ {__filename}', cStrDivider, sep='\n')
