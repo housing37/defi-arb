@@ -94,14 +94,16 @@ def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=T
                         lst_quotes = lst_symbs[-1]
                         append_qoute = True
                         for quote in lst_quotes:
-                            if symb != quote[1]:
-                                if float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
-                                    diff = float(quote[-1]) - float(price_usd)
-                                    b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
-                                    str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
-                                    if b_alert:
-                                        print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}\n  pair_addr: {quote[0]}\n  liquidity: ${quote[3]:,.2f}\n')
-                                        print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n   liquidity: ${liquid:,.2f}\n')
+                            # if this BT symbol is not stored already
+                            #   and the price is diffrent than whats stored
+                            #   and price is not set to -1
+                            if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
+                                diff = float(quote[-1]) - float(price_usd)
+                                b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
+                                str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
+                                if b_alert:
+                                    print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}\n  pair_addr: {quote[0]}\n  liquidity: ${quote[3]:,.2f}\n')
+                                    print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n   liquidity: ${liquid:,.2f}\n')
                             if pair_addr == quote[0]:
                                 append_qoute = False
                         if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
