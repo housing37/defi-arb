@@ -25,9 +25,11 @@ import requests, json
 #lst_pair_toks_cid = []
 #lst_pair_toks = []
 NET_CALL_CNT = 0
+ARB_OPP_CNT = 0
 
 RUN_TIME_START = None
 USD_DIFF = 1000
+
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
@@ -49,22 +51,25 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
     if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
     dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
 
-    print(f'... NET_CALL_CNT: {NET_CALL_CNT}')
-    print()
+    print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
+    print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...')
     [print(k, dict_all_symbs[k][0:5]) for k in dict_all_symbs.keys()]
-    print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...\n')
+    print(f'... {chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())}')
+    print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
     return dict(dict_all_symbs)
 
 # scrape dexscreener recursively
 def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
     time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
     data = exe_dexscreener_request(url)
-    print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
+    if plog: print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
+    else: print('.', end=' ', flush=True)
+    
     for k,v in enumerate(data['pairs']):
         pair_addr = v['pairAddress']
         liquid = -1.0 if 'liquidity' not in v else v['liquidity']['usd']
@@ -93,7 +98,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 symb = v['baseToken']['symbol']
                 DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd]]]
                 #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=plog)
             elif v['baseToken']['address'] in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
                 symb = v['baseToken']['symbol']
@@ -109,10 +114,10 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                     if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
                         diff = float(quote[-1]) - float(price_usd)
                         b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
-                        str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
                         if b_alert:
-                            print(f'[{NET_CALL_CNT}] _ T | {tok_symb} : {tok_addr} returned {len(data["pairs"])} pairs')
-                            print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]')
+                            ARB_OPP_CNT += 1
+                            print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
+                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f}')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
                             print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
                             print(f'  pair_addr: {quote[0]}')
@@ -133,7 +138,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 symb = v['quoteToken']['symbol']
                 DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', -1, '-1']]]
                 #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=plog)
             elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
                 addr = v['quoteToken']['address']
                 DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
@@ -239,18 +244,18 @@ def go_main():
                         d_print=True)
 
     
-    c1 = 'pulsechain'
-    s1 = 'WPLS'
-    d1 = search_for_arb(t_addr=addr_wpls_pc,
-                        t_symb=s1,
-                        chain_id=c1,
-                        d_print=True)
-
-    print()
-    [print(k, d0[k][0:5]) for k in d0.keys()]
-    print(f'{c0} _ start from {s0} _ unique tokens found: {len(d0.keys())} ...\n')
-    [print(k, d1[k][0:5]) for k in d1.keys()]
-    print(f'{c1} _ start from {s1} _ unique tokens found: {len(d1.keys())} ...\n')
+#    c1 = 'pulsechain'
+#    s1 = 'WPLS'
+#    d1 = search_for_arb(t_addr=addr_wpls_pc,
+#                        t_symb=s1,
+#                        chain_id=c1,
+#                        d_print=True)
+#
+#    print()
+#    [print(k, d0[k][0:5]) for k in d0.keys()]
+#    print(f'{c0} _ start from {s0} _ unique tokens found: {len(d0.keys())} ...\n')
+#    [print(k, d1[k][0:5]) for k in d1.keys()]
+#    print(f'{c1} _ start from {s1} _ unique tokens found: {len(d1.keys())} ...\n')
 
 if __name__ == "__main__":
     ## start ##
