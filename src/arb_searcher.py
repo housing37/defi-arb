@@ -20,7 +20,9 @@ import requests, json
 #------------------------------------------------------------#
 addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
-LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth], ['pulsechain','WPLS',addr_wpls_pc]]
+#LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth], ['pulsechain','WPLS',addr_wpls_pc]]
+LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth]]
+LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
 NET_CALL_CNT = 0
 ARB_OPP_CNT = 0
 
@@ -58,7 +60,7 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
 
 # scrape dexscreener recursively
 def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT, LST_DEX_ROUTERS
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
@@ -109,7 +111,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 lst_symbs = DICT_ALL_SYMBS[addr]
                 lst_quotes = lst_symbs[-1]
                 append_qoute = True
-                for quote in lst_quotes:
+                for quote in lst_quotes[-1:]:
                     # if this BT symbol is not stored already
                     #   and the price is diffrent than whats stored
                     #   and price is not set to -1
@@ -130,10 +132,9 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
                             print(f'\n  PRICE-DIFF = ${diff:,.2f}\n')
-                    if pair_addr == quote[0]:
-                        append_qoute = False
-                if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
-                #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+
+                    DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
+                    #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
 
             if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['quoteToken']['address']
