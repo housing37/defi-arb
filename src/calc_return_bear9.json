@@ -1,0 +1,233 @@
+/* NOTE: no commenting in JSON ;{
+    url = "https://api.dexscreener.io/latest/dex/tokens/0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c"
+*/
+{
+    "schemaVersion": "1.0.0",
+    "pairs": [
+        {
+            "chainId": "pulsechain",
+            "dexId": "pulsex",
+            "url": "https://dexscreener.com/pulsechain/0xfff65850fbbb558b822f6d913d3efa4e39277fb1",
+            "pairAddress": "0xFFF65850fBBB558B822F6D913d3eFa4E39277fb1",
+            "labels": ["v1"],
+            "baseToken": {
+                "address": "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c",
+                "name": "籯",
+                "symbol": "籯"
+            },
+            "quoteToken": {
+                "address": "0xA1077a294dDE1B09bB078844df40758a5D0f9a27",
+                "name": "Wrapped Pulse",
+                "symbol": "WPLS"
+            },
+            "priceNative": "1.4526",
+            "priceUsd": "0.00006033",
+            "txns": {
+                "m5": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h1": {
+                    "buys": 3,
+                    "sells": 4
+                },
+                "h6": {
+                    "buys": 37,
+                    "sells": 35
+                },
+                "h24": {
+                    "buys": 158,
+                    "sells": 141
+                }
+            },
+            "volume": {
+                "h24": 1904.26,
+                "h6": 403.04,
+                "h1": 26.54,
+                "m5": 0
+            },
+            "priceChange": {
+                "m5": 0,
+                "h1": -4.27,
+                "h6": -2.73,
+                "h24": -9.54
+            },
+            "liquidity": {
+                "usd": 793.78,
+                "base": 6578391,
+                "quote": 9556329
+            },
+            "fdv": 682434,
+            "pairCreatedAt": 1685475485000
+        },
+        {
+            "chainId": "pulsechain",
+            "dexId": "pulsex",
+            "url": "https://dexscreener.com/pulsechain/0x225d7cc2419015c91a638eac2ba77199cde7b159",
+            "pairAddress": "0x225d7CC2419015C91A638EAC2BA77199CdE7b159",
+            "labels": ["v2"],
+            "baseToken": {
+                "address": "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c",
+                "name": "籯",
+                "symbol": "籯"
+            },
+            "quoteToken": {
+                "address": "0xA1077a294dDE1B09bB078844df40758a5D0f9a27",
+                "name": "Wrapped Pulse",
+                "symbol": "WPLS"
+            },
+            "priceNative": "1.5091",
+            "priceUsd": "0.00006311",
+            "txns": {
+                "m5": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h1": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h6": {
+                    "buys": 3,
+                    "sells": 3
+                },
+                "h24": {
+                    "buys": 14,
+                    "sells": 12
+                }
+            },
+            "volume": {
+                "h24": 43.39,
+                "h6": 6.81,
+                "h1": 0,
+                "m5": 0
+            },
+            "priceChange": {
+                "m5": 0,
+                "h1": 0,
+                "h6": 2.46,
+                "h24": -6.32
+            },
+            "liquidity": {
+                "usd": 77.15,
+                "base": 611241,
+                "quote": 922462
+            },
+            "fdv": 713920,
+            "pairCreatedAt": 1692647905000
+        },
+        {
+            "chainId": "pulsechain",
+            "dexId": "pulsex",
+            "url": "https://dexscreener.com/pulsechain/0x790bdee0ca971e25b2872214d4f1a14aad2a4235",
+            "pairAddress": "0x790bdEe0ca971e25b2872214d4f1A14AaD2a4235",
+            "labels": ["v2"],
+            "baseToken": {
+                "address": "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c",
+                "name": "籯",
+                "symbol": "籯"
+            },
+            "quoteToken": {
+                "address": "0xE63191967735C52f5de78CE2471759a9963Ce118",
+                "name": "清导",
+                "symbol": "清导"
+            },
+            "priceNative": "0.07722",
+            "priceUsd": "0.00007014",
+            "txns": {
+                "m5": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h1": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h6": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h24": {
+                    "buys": 1,
+                    "sells": 1
+                }
+            },
+            "volume": {
+                "h24": 1.32,
+                "h6": 0,
+                "h1": 0,
+                "m5": 0
+            },
+            "priceChange": {
+                "m5": 0,
+                "h1": 0,
+                "h6": 0,
+                "h24": 0
+            },
+            "liquidity": {
+                "usd": 0,
+                "base": 54284,
+                "quote": 399635
+            },
+            "fdv": 40187,
+            "pairCreatedAt": 1693947281000
+        },
+        {
+            "chainId": "pulsechain",
+            "dexId": "pulsex",
+            "url": "https://dexscreener.com/pulsechain/0xc44e3a2f87c019c4321e7b59d8d9b06c6d8b1ac7",
+            "pairAddress": "0xC44e3'['c2A2f87c019c4321e7b59d8d9b06c6d8b1ac7",
+            "labels": ["v2"],
+            "baseToken": {
+                "address": "0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c",
+                "name": "籯",
+                "symbol": "籯"
+            },
+            "quoteToken": {
+                "address": "0x7922b8faadd6d106154e85b8d8e95480f0a27b1f",
+                "name": "Uniswap Pulse LP",
+                "symbol": "UNLP"
+            },
+            "priceNative": "0.0013",
+            "priceUsd": "0.00004011",
+            "txns": {
+                "m5": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h1": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h6": {
+                    "buys": 0,
+                    "sells": 0
+                },
+                "h24": {
+                    "buys": 0,
+                    "sells": 0
+                }
+            },
+            "volume": {
+                "h24": 0,
+                "h6": 0,
+                "h1": 0,
+                "m5": 0
+            },
+            "priceChange": {
+                "m5": 0,
+                "h1": 0,
+                "h6": 0,
+                "h24": 0
+            },
+            "liquidity": {
+                "usd": 0,
+                "base": 0,
+                "quote": 0
+            },
+            "fdv": 0,
+            "pairCreatedAt": 1695632977000
+        }
+    ]
+}
+

@@ -7,7 +7,7 @@ print(f'GO {__filename} -> starting IMPORTs and globals decleration')
 #------------------------------------------------------------#
 #   IMPORTS                                                  #
 #------------------------------------------------------------#
-import sys, os, time
+import sys, os, time, traceback
 from datetime import datetime
 import requests, json
 #from web3 import Web3
@@ -42,11 +42,15 @@ def get_lps(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_prin
 #    return list(lst_t_pair_toks)
 
     if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
-    dict_all_symbs = get_pairs_lst(t_addr, t_symb, chain_id, {}, plog=d_print)
+#    dict_all_symbs = get_pairs_lst(t_addr, t_symb, chain_id, {}, plog=d_print)
+    dict_all_symbs = get_pairs_lst(t_addr, t_symb, chain_id, {}, plog=False)
             # NOTE: when starting with WETH, there is no pair that leads to chain_id = 'pulsechain'
                 
 #    if d_print: [print(k,dict_all_symbs[k]) for k in dict_all_symbs.keys()]
     print(f'... NET_CALL_CNT: {NET_CALL_CNT}')
+    print()
+    [print(k, dict_all_symbs[k][0:5]) for k in dict_all_symbs.keys()]
+    print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...\n')
     return dict(dict_all_symbs)
 
 def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
@@ -64,37 +68,97 @@ def get_pairs_lst(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
     time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
-    print(f'\n*NET_CALL_CNT: {NET_CALL_CNT}* _ [{get_time_now()}] _ S|[{run_time_start}]')
-    print(f'   {tok_symb}: {tok_addr}')
+    print(cStrDivider, f'NET_CALL_CNT: [{NET_CALL_CNT}] _ now: [{get_time_now()}] _ start: [{run_time_start}]', f'   {tok_symb}: {tok_addr}', cStrDivider, '', sep='\n')
+#    print(f'   {tok_symb}: {tok_addr}\n\n')
     try:
         response = requests.get(url)
         pair_skip_chain_cnt = 0
         if response.status_code == 200:
             data = response.json()
-            print(f'{tok_addr} returned {len(data["pairs"])}#s of pairs')
+            print(f'[{NET_CALL_CNT}] _ T | {tok_symb} : {tok_addr} returned {len(data["pairs"])} pairs')
             for k,v in enumerate(data['pairs']):
-                if v['chainId'] == chain_id:
-                    if plog:
-                        print(f'[{NET_CALL_CNT}]', v['chainId'],
-                                v['dexId'],
-                                v['baseToken']['symbol'],
-                                v['quoteToken']['symbol'],
-                                v['pairAddress'], f'[{NET_CALL_CNT}]')
+                pair_addr = v['pairAddress']
+                liquid = -1 if 'liquidity' not in v else v['liquidity']['usd']
+                _chain_id = v['chainId']
+                dex_id = v['dexId']
+                labels = [] if 'labels' not in v else v['labels']
+                price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
+                base_tok_addr = v['baseToken']['address']
+                base_tok_symb = v['baseToken']['symbol']
+                base_tok_name = v['baseToken']['name']
+                quote_tok_addr = v['quoteToken']['address']
+                quote_tok_symb = v['quoteToken']['symbol']
+                quote_tok_name = v['quoteToken']['name']
+                
+                # ignore usd price errors
+                if price_usd == '-1':
+                    continue
+                    
+                # ignore uniswap v3
+                if dex_id == 'uniswap' and 'v3' in labels:
+                    continue
+                    
+                if _chain_id == chain_id:
+#                    if plog:
+#                        print(f'[{NET_CALL_CNT}]', v['chainId'],
+#                                v['dexId'],
+#                                v['baseToken']['symbol'],
+#                                v['quoteToken']['symbol'],
+#                                v['pairAddress'], f'[{NET_CALL_CNT}]')
                 
                     if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                         addr = v['baseToken']['address']
                         symb = v['baseToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [symb, v['chainId'], v['dexId']]
-                        [print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, price_usd]]]
+                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-                        #return get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                    elif v['baseToken']['address'] in DICT_ALL_SYMBS:
+                        addr = v['baseToken']['address']
+                        symb = v['baseToken']['symbol']
+                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                        
+                        lst_symbs = DICT_ALL_SYMBS[addr]
+#                        print(lst_symbs)
+                        lst_quotes = lst_symbs[-1]
+#                        print(f'tok_addr req: {tok_addr}')
+#                        print(*lst_quotes, sep='\n')
+                        append_qoute = True
+                        for quote in lst_quotes:
+#                            print(quote)
+                            if symb != quote[1]:
+                                if float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
+                                    diff = float(quote[-1]) - float(price_usd)
+                                    b_alert = diff >= 5 or diff <= -5
+                                    str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
+                                    if b_alert:
+                                        print(f'FOUND price diff for base_tok: {addr} | {lst_symbs[0:5]} _ {quote}')
+    #                                print('', *DICT_ALL_SYMBS[addr][-1], sep='\n        ')
+                                        print(f'''
+    price_usd = {price_usd}
+    diff = ${diff:,.2f} _ {str_alert}
+    base_tok_symb = {base_tok_symb}
+    quote_tok_symb = {quote_tok_symb}
+    _chain_id = {_chain_id}
+    dex_id = {dex_id} _ {labels}
+    pair_addr = {pair_addr}
+
+                                            ''')
+                            if pair_addr == quote[0]:
+                                append_qoute = False
+                        if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, price_usd])
+                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+
                     if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
                         addr = v['quoteToken']['address']
                         symb = v['quoteToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [symb, v['chainId'], v['dexId']]
-                        [print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '-1']]]
+                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-                        #return get_pairs_lst(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+                    elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
+                        addr = v['quoteToken']['address']
+                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                        
             return DICT_ALL_SYMBS
             
 #            for k,v in enumerate(data['pairs']):
@@ -154,6 +218,24 @@ READ_ME = f'''
         $ python3 {__filename} -<nil> <nil>
         $ python3 {__filename}
 '''
+#ref: https://stackoverflow.com/a/1278740/2298002
+def print_exception(e, debugLvl=0):
+    #print type(e)       # the exception instance
+    #print e.args        # arguments stored in .args
+    #print e             # __str__ allows args to be printed directly
+    print('', cStrDivider, f' Exception Caught _ e: {e}', cStrDivider, sep='\n')
+    if debugLvl > 0:
+        print('', cStrDivider, f' Exception Caught _ type(e): {type(e)}', cStrDivider, sep='\n')
+    if debugLvl > 1:
+        print('', cStrDivider, f' Exception Caught _ e.args: {e.args}', cStrDivider, sep='\n')
+
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    #print(traceback.format_exc())
+    strTrace = traceback.format_exc()
+    #print(exc_type, fname, exc_tb.tb_lineno)
+    print('', cStrDivider, f' type: {exc_type}', f' file: {fname}', f' line_no: {exc_tb.tb_lineno}', f' traceback: {strTrace}', cStrDivider, sep='\n')
+    
 def wait_sleep(wait_sec : int, b_print=True, bp_one_line=True): # sleep 'wait_sec'
     print(f'waiting... {wait_sec} sec')
     for s in range(wait_sec, 0, -1):
@@ -197,29 +279,33 @@ def go_main():
 #    addr_caw = '0xf3b9569F82B18aEf890De263B84189bd33EBe452'
     addr_pdai = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
     addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+    addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
     #========================================================#
 
-    dict_all_symbs={}
+    choose = input('\n Scrape dexscreener for unique tokens? [y/n]: ')
+    assert choose == 'y', "  didn't pick 'y', exiting..."
+    
     c0 = 'ethereum'
     s0 = 'WETH (on ethereum)'
     d0 = get_lps(t_addr=addr_weth_eth,
                 t_symb=s0,
                 chain_id=c0,
                 d_print=True)
-#    dict_all_symbs.update(d)
+
     
     c1 = 'pulsechain'
-    s1 = 'pDAI'
-    d1 = get_lps(t_addr=addr_pdai,
-                t_symb='pDAI',
+    s1 = 'WPLS'
+    d1 = get_lps(t_addr=addr_wpls_pc,
+                t_symb=s1,
                 chain_id=c1,
                 d_print=True)
-#    dict_all_symbs.update(d)
+
     print()
-    [print(k, d0[k]) for k in d0.keys()]
+    [print(k, d0[k][0:5]) for k in d0.keys()]
     print(f'{c0} _ start from {s0} _ unique tokens found: {len(d0.keys())} ...\n')
-    [print(k, d1[k]) for k in d1.keys()]
+    [print(k, d1[k][0:5]) for k in d1.keys()]
     print(f'{c1} _ start from {s1} _ unique tokens found: {len(d1.keys())} ...\n')
+    
 #    [print(k, dict_all_symbs[k]) for k in dict_all_symbs.keys()]
 #    print(f'\nsymbs cnt: {len(dict_all_symbs.keys())} ... ')
     #print(*dict_all_symbs, sep='\n')
@@ -240,7 +326,10 @@ if __name__ == "__main__":
     lst_argv_OG, argv_cnt = read_cli_args()
     
     ## exe ##
-    go_main()
+    try:
+        go_main()
+    except Exception as e:
+        print_exception(e, debugLvl=0)
     
     ## end ##
     print(f'\n\nRUN_TIME_START: {run_time_start}\nRUN_TIME_END:   {get_time_now()}\n')
