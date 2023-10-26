@@ -27,7 +27,7 @@ import requests, json
 NET_CALL_CNT = 0
 
 RUN_TIME_START = None
-
+USD_DIFF = 100
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
@@ -43,7 +43,7 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
     return dict(dict_all_symbs)
 
 def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
@@ -61,7 +61,7 @@ def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=T
                 liquid = -1 if 'liquidity' not in v else v['liquidity']['usd']
                 _chain_id = v['chainId']
                 dex_id = v['dexId']
-                labels = [] if 'labels' not in v else v['labels']
+                labels = ['-1'] if 'labels' not in v else v['labels']
                 price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
                 base_tok_addr = v['baseToken']['address']
                 base_tok_symb = v['baseToken']['symbol']
@@ -71,7 +71,7 @@ def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=T
                 quote_tok_name = v['quoteToken']['name']
                 
                 # ignore usd price errors
-                if price_usd == '-1':
+                if price_usd == '-1.0':
                     continue
                     
                 # ignore uniswap v3
@@ -82,13 +82,13 @@ def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=T
                     if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                         addr = v['baseToken']['address']
                         symb = v['baseToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, price_usd]]]
+                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, price_usd]]]
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
                     elif v['baseToken']['address'] in DICT_ALL_SYMBS:
                         addr = v['baseToken']['address']
                         symb = v['baseToken']['symbol']
-                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                         
                         lst_symbs = DICT_ALL_SYMBS[addr]
                         lst_quotes = lst_symbs[-1]
@@ -97,34 +97,25 @@ def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=T
                             if symb != quote[1]:
                                 if float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
                                     diff = float(quote[-1]) - float(price_usd)
-                                    b_alert = diff >= 5 or diff <= -5
+                                    b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
                                     str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
                                     if b_alert:
-                                        print(f'FOUND price diff for base_tok: {addr} | {lst_symbs[0:5]} _ {quote}')
-                                        print(f'''
-                                            price_usd = {price_usd}
-                                            diff = ${diff:,.2f} _ {str_alert}
-                                            base_tok_symb = {base_tok_symb}
-                                            quote_tok_symb = {quote_tok_symb}
-                                            _chain_id = {_chain_id}
-                                            dex_id = {dex_id} _ {labels}
-                                            pair_addr = {pair_addr}
-
-                                            ''')
+                                        print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[3]):,.2f}\n  pair_addr: {quote[0]}\n')
+                                        print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n')
                             if pair_addr == quote[0]:
                                 append_qoute = False
-                        if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, price_usd])
+                        if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, price_usd])
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
 
                     if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
                         addr = v['quoteToken']['address']
                         symb = v['quoteToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '-1']]]
+                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', '-1']]]
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
                     elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
                         addr = v['quoteToken']['address']
-                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                         #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                         
             return DICT_ALL_SYMBS
