@@ -112,8 +112,17 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
                         if b_alert:
                             print(f'[{NET_CALL_CNT}] _ T | {tok_symb} : {tok_addr} returned {len(data["pairs"])} pairs')
-                            print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}\n  pair_addr: {quote[0]}\n  liquidity: ${quote[3]:,.2f}\n')
-                            print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n   liquidity: ${liquid:,.2f}\n')
+                            print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]')
+                            print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
+                            print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
+                            print(f'  pair_addr: {quote[0]}')
+                            print(f'  liquidity: ${quote[3]:,.2f}')
+                            print('\n  cross-dex ...')
+                            print(f'   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}')
+                            print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}')
+                            print(f'   pair_addr: {pair_addr}')
+                            print(f'   liquidity: ${liquid:,.2f}')
+                            print(f'\n  PRICE-DIFF = ${diff:,.2f}\n')
                     if pair_addr == quote[0]:
                         append_qoute = False
                 if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
@@ -219,8 +228,8 @@ def go_main():
     addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
     #========================================================#
 
-    choose = input('\n Scrape dexscreener for unique tokens? [y/n]: ')
-    assert choose == 'y', "  didn't pick 'y', exiting..."
+#    choose = input('\n Scrape dexscreener for unique tokens? [y/n]: ')
+#    assert choose == 'y', "  didn't pick 'y', exiting..."
     
     c0 = 'ethereum'
     s0 = 'WETH (on ethereum)'
