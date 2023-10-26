@@ -18,12 +18,9 @@ import requests, json
 #------------------------------------------------------------#
 #   GLOBALS
 #------------------------------------------------------------#
-#LST_CHAIN_IDs = ['ethereum', 'pulsechain']
-#LST_DEX_IDs_eth = ['uniswap', 'sushiswap', 'balancer', 'pancakeswap']
-#LST_DEX_IDs_pc = ['pulsex']
-#
-#lst_pair_toks_cid = []
-#lst_pair_toks = []
+addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
+LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth], ['pulsechain','WPLS',addr_wpls_pc]]
 NET_CALL_CNT = 0
 ARB_OPP_CNT = 0
 
@@ -206,61 +203,24 @@ def read_cli_args():
     return sys.argv, len(sys.argv)
 
 def go_main():
-#    addr_bond = '0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38'
-#    addr_wpls = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
-#    addr_bear = '0xd6c31bA0754C4383A41c0e9DF042C62b5e918f6d'
-#    addr_a1a = '0x697fc467720B2a8e1b2F7F665d0e3f28793E65e8'
-#
-#    addr_legal = '0x0b1307dc5D90a0B60Be18D2634843343eBc098AF' # 1 LEGAL (LegalContract) _ 'LEGAL'
-#    addr_ojeon = '0xFa4d9C6E012d946853386113ACbF166deC5465Bb' # 500 ã (OjeonContract) _ (ã = E3889D)
-#    addr_ying = '0x271197EFe41073681577CdbBFD6Ee1DA259BAa3c'
-#    addr_lol = '0xA63F8061A67ecdbf147Cd1B60f91Cf95464E868D' # 999 LOL (LOLContract) _ (Þ = DE8D)
-#    addr_treas = '0x463413c579D29c26D59a65312657DFCe30D545A1' # 100,000 Treasury (TreasuryBillContract) _ 'TREASURY BILL'
-#    addr_bul8 = '0x2959221675bdF0e59D0cC3dE834a998FA5fFb9F4' # (1311 * 9**18) / 10**18 Bullion (Bullion8Contract) _ (â§ = E291A7)
-#
-#    addr_write = '0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b' # ޖޮޔިސްދޭވޯހީ (write) $M price token
-#    addr_r = '0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622'
-#    addr_bear9 = '0x1f737F7994811fE994Fe72957C374e5cD5D5418A'
-#
-#    addr_wenti = '0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc' # '问题 (问题) _ wenti'
-#
-#    addr_atrop = '0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6' # 313 Atropa (AtropaContract) _ 'ATROPA'
-#    addr_tsfi = '0x4243568Fa2bbad327ee36e06c16824cAd8B37819'
-#    addr_caw = '0xf3b9569F82B18aEf890De263B84189bd33EBe452'
-    #addr_wenti = '0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc' # '问题 (问题) _ wenti'
-#    addr_bond = '0x25d53961a27791B9D8b2d74FB3e937c8EAEadc38'
-#    st0_addr = '0x52a4682880E990ebed5309764C7BD29c4aE22deB' # 2,000,000 유 (YuContract) _ (ì = EC9CA0)
-#    st1_addr = '0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89' # 1 Di (DiContract) _ (ç¬¬ä½ = E7ACACE4BD9C)
-#    liq_tok_0 = '0xE63191967735C52f5de78CE2471759a9963Ce118' # 清导
-#    liq_tok_1 = '0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b' # ޖޮޔިސްދޭވޯހީ (write)
-    addr_pdai = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
-    addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-    addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
-    #========================================================#
-
-#    choose = input('\n Scrape dexscreener for unique tokens? [y/n]: ')
-#    assert choose == 'y', "  didn't pick 'y', exiting..."
-    
-    c0 = 'ethereum'
-    s0 = 'WETH (on ethereum)'
-    d0 = search_for_arb(t_addr=addr_weth_eth,
-                        t_symb=s0,
-                        chain_id=c0,
-                        d_print=True)
-
-    
-#    c1 = 'pulsechain'
-#    s1 = 'WPLS'
-#    d1 = search_for_arb(t_addr=addr_wpls_pc,
-#                        t_symb=s1,
-#                        chain_id=c1,
-#                        d_print=True)
-#
-#    print()
-#    [print(k, d0[k][0:5]) for k in d0.keys()]
-#    print(f'{c0} _ start from {s0} _ unique tokens found: {len(d0.keys())} ...\n')
-#    [print(k, d1[k][0:5]) for k in d1.keys()]
-#    print(f'{c1} _ start from {s1} _ unique tokens found: {len(d1.keys())} ...\n')
+    lst_d = []
+    addr = symb = chain = 'nil'
+    for c in LST_CHAIN_PARAMS:
+        addr = c[2]
+        symb = c[1]
+        chain = c[0]
+        d0 = search_for_arb(t_addr=addr,
+                            t_symb=symb,
+                            chain_id=chain,
+                            d_print=True)
+        lst_d.append([d0, addr, symb, chain])
+                            
+    print()
+    for v in lst_d:
+        d0 = v[0]
+        print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())} ...')
+        [print(k, d0[k][0:5]) for k in d0.keys()]
+        print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())}\n')
 
 if __name__ == "__main__":
     ## start ##
