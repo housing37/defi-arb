@@ -29,6 +29,7 @@ ARB_OPP_CNT = 0
 
 RUN_TIME_START = None
 USD_DIFF = 1000
+USD_LIQ_REQ = 10000
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -84,6 +85,10 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         quote_tok_symb = v['quoteToken']['symbol']
         quote_tok_name = v['quoteToken']['name']
         
+        # check liquidity requirement
+        if liquid < USD_LIQ_REQ:
+            continue
+            
         # ignore usd price errors
         if price_usd == '-1.0':
             continue
@@ -112,21 +117,21 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                     #   and the price is diffrent than whats stored
                     #   and price is not set to -1
                     if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
+                        # check for price diff than what we've logged so far
                         diff = float(quote[-1]) - float(price_usd)
-                        b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
-                        if b_alert:
+                        if diff >= USD_DIFF or diff <= -USD_DIFF:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
                             print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f}')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
                             print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
                             print(f'  pair_addr: {quote[0]}')
-                            print(f'  liquidity: ${quote[3]:,.2f}')
+                            print(f'  LIQUIDITY: ${quote[3]:,.2f}')
                             print('\n  cross-dex ...')
                             print(f'   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}')
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}')
                             print(f'   pair_addr: {pair_addr}')
-                            print(f'   liquidity: ${liquid:,.2f}')
+                            print(f'   LIQUIDITY: ${liquid:,.2f}')
                             print(f'\n  PRICE-DIFF = ${diff:,.2f}\n')
                     if pair_addr == quote[0]:
                         append_qoute = False
