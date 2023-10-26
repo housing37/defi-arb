@@ -31,10 +31,23 @@ USD_DIFF = 1000
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
+def exe_dexscreener_request(url='nil_url'):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json() # data
+        else:
+            print(f"Request failed with status code {response.status_code}\n returning empty list")
+            return []
+    except requests.exceptions.RequestException as e:
+        # Handle request exceptions
+        print_exception(e, debugLvl=0)
+        return -1
+        
 def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
     global NET_CALL_CNT
     if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
-    dict_all_symbs = scrape_dex_recursive(t_addr, t_symb, chain_id, {}, plog=False)
+    dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
 
     print(f'... NET_CALL_CNT: {NET_CALL_CNT}')
     print()
@@ -42,92 +55,82 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
     print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...\n')
     return dict(dict_all_symbs)
 
-def scrape_dex_recursive(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
+# scrape dexscreener recursively
+def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
     global NET_CALL_CNT, RUN_TIME_START, USD_DIFF
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
     time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
-    print(cStrDivider, f'NET_CALL_CNT: [{NET_CALL_CNT}] _ now: [{get_time_now()}] _ start: [{RUN_TIME_START}]', f'   {tok_symb}: {tok_addr}', cStrDivider, '', sep='\n')
-    try:
-        response = requests.get(url)
-        pair_skip_chain_cnt = 0
-        if response.status_code == 200:
-            data = response.json()
-            print(f'[{NET_CALL_CNT}] _ T | {tok_symb} : {tok_addr} returned {len(data["pairs"])} pairs')
-            for k,v in enumerate(data['pairs']):
-                pair_addr = v['pairAddress']
-                liquid = -1.0 if 'liquidity' not in v else v['liquidity']['usd']
-                _chain_id = v['chainId']
-                dex_id = v['dexId']
-                labels = ['-1'] if 'labels' not in v else v['labels']
-                price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
-                base_tok_addr = v['baseToken']['address']
-                base_tok_symb = v['baseToken']['symbol']
-                base_tok_name = v['baseToken']['name']
-                quote_tok_addr = v['quoteToken']['address']
-                quote_tok_symb = v['quoteToken']['symbol']
-                quote_tok_name = v['quoteToken']['name']
+    data = exe_dexscreener_request(url)
+    print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
+    for k,v in enumerate(data['pairs']):
+        pair_addr = v['pairAddress']
+        liquid = -1.0 if 'liquidity' not in v else v['liquidity']['usd']
+        _chain_id = v['chainId']
+        dex_id = v['dexId']
+        labels = ['-1'] if 'labels' not in v else v['labels']
+        price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
+        base_tok_addr = v['baseToken']['address']
+        base_tok_symb = v['baseToken']['symbol']
+        base_tok_name = v['baseToken']['name']
+        quote_tok_addr = v['quoteToken']['address']
+        quote_tok_symb = v['quoteToken']['symbol']
+        quote_tok_name = v['quoteToken']['name']
+        
+        # ignore usd price errors
+        if price_usd == '-1.0':
+            continue
+            
+        # ignore uniswap v3 (compatible w/ v2 code?)
+        if dex_id == 'uniswap' and 'v3' in labels:
+            continue
+            
+        if _chain_id == chain_id:
+            if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
+                addr = v['baseToken']['address']
+                symb = v['baseToken']['symbol']
+                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd]]]
+                #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+            elif v['baseToken']['address'] in DICT_ALL_SYMBS:
+                addr = v['baseToken']['address']
+                symb = v['baseToken']['symbol']
+                DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                 
-                # ignore usd price errors
-                if price_usd == '-1.0':
-                    continue
-                    
-                # ignore uniswap v3
-                if dex_id == 'uniswap' and 'v3' in labels:
-                    continue
-                    
-                if _chain_id == chain_id:
-                    if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
-                        addr = v['baseToken']['address']
-                        symb = v['baseToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd]]]
-                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                        scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-                    elif v['baseToken']['address'] in DICT_ALL_SYMBS:
-                        addr = v['baseToken']['address']
-                        symb = v['baseToken']['symbol']
-                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
-                        
-                        lst_symbs = DICT_ALL_SYMBS[addr]
-                        lst_quotes = lst_symbs[-1]
-                        append_qoute = True
-                        for quote in lst_quotes:
-                            # if this BT symbol is not stored already
-                            #   and the price is diffrent than whats stored
-                            #   and price is not set to -1
-                            if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
-                                diff = float(quote[-1]) - float(price_usd)
-                                b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
-                                str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
-                                if b_alert:
-                                    print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}\n  pair_addr: {quote[0]}\n  liquidity: ${quote[3]:,.2f}\n')
-                                    print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n   liquidity: ${liquid:,.2f}\n')
-                            if pair_addr == quote[0]:
-                                append_qoute = False
-                        if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
-                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                lst_symbs = DICT_ALL_SYMBS[addr]
+                lst_quotes = lst_symbs[-1]
+                append_qoute = True
+                for quote in lst_quotes:
+                    # if this BT symbol is not stored already
+                    #   and the price is diffrent than whats stored
+                    #   and price is not set to -1
+                    if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
+                        diff = float(quote[-1]) - float(price_usd)
+                        b_alert = diff >= USD_DIFF or diff <= -USD_DIFF
+                        str_alert = '***** ALERT HIGH DIFF *****' if b_alert else ''
+                        if b_alert:
+                            print(f'[{NET_CALL_CNT}] _ T | {tok_symb} : {tok_addr} returned {len(data["pairs"])} pairs')
+                            print(f'FOUND arb-opp ... [price-diff = ${diff:,.2f}]\n  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}\n  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}\n  pair_addr: {quote[0]}\n  liquidity: ${quote[3]:,.2f}\n')
+                            print(f'  cross-dex ... [price-diff = ${diff:,.2f}]\n   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}\n   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}\n   pair_addr: {pair_addr}\n   liquidity: ${liquid:,.2f}\n')
+                    if pair_addr == quote[0]:
+                        append_qoute = False
+                if append_qoute: DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
+                #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
 
-                    if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
-                        addr = v['quoteToken']['address']
-                        symb = v['quoteToken']['symbol']
-                        DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', -1, '-1']]]
-                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                        scrape_dex_recursive(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
-                    elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
-                        addr = v['quoteToken']['address']
-                        DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
-                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
-                        
-            return DICT_ALL_SYMBS
-        else:
-            print(f"Request failed with status code {response.status_code}\n returning empty list")
-            return []
-    except requests.exceptions.RequestException as e:
-        # Handle request exceptions
-        print(f"Request error: {e};\n returning -1")
-        return -1
+            if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
+                addr = v['quoteToken']['address']
+                symb = v['quoteToken']['symbol']
+                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', -1, '-1']]]
+                #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=True)
+            elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
+                addr = v['quoteToken']['address']
+                DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+                
+    return DICT_ALL_SYMBS
 
 #------------------------------------------------------------#
 #   DEFAULT SUPPORT                                          #
