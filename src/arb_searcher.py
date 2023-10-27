@@ -96,19 +96,20 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
             elif v['baseToken']['address'] in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
                 symb = v['baseToken']['symbol']
+                addr_quote = v['quoteToken']['address']
                 DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
                 
                 lst_symbs = DICT_ALL_SYMBS[addr]
                 lst_quotes = lst_symbs[-1]
 
                 # set conditional for printing quote
-                #   ignore uniswap v3, usd price errors, low liquidity
+                #   usd price errors and low liquidity
                 #   NOTE: but don't want to ignore them for recursive calls
-                #   NOTE_2: this logic allows cought cases to be stored
+                #    this logic allows all cases to be stored & recursively assessed
                 #    but they won't be printed and have their quote list updated
                 #   HENCE, skip_quote & non-hi_liq cases will indeed be printed
                 #    when they are compared against non-skip_quote & hi_liq cases
-                skip_quote = (dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ
+                skip_quote = price_usd == '-1.0' or liquid < USD_LIQ_REQ
                 hi_liq = liquid > float(price_usd)
                 
                 # NOTE: hi_liq still lets the low liq pairs get stored
@@ -119,13 +120,23 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                     #   and the price is diffrent than whats stored
                     #   and price is not set to -1
                     if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
-                        # check for price diff than what we've logged so far
-                        diff = float(price_usd) - float(quote[-1])
+
+                        # check for native price diff and quoteTokens match
+                        diff_nat = diff_perc_nat = log_diff_nat = -1
+                        if addr_quote == quote[2]:
+                            diff_nat = float(price_nat) - float(quote[-2])
+                            diff_perc_nat = abs(1 - (float(quote[-2]) / float(price_nat))) * 100
+                            log_diff_nat = f'{diff_nat:,.4f} {quote_tok_symb} _ {diff_perc_nat:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}'
+                        
+                        # check for usd price diff than what we've logged so far
+                        diff_usd = float(price_usd) - float(quote[-1])
                         diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
-                        if diff >= USD_DIFF or diff <= -USD_DIFF:
+                        usd_diff_ok = diff_usd >= USD_DIFF or diff_usd <= -USD_DIFF
+                        nat_diff_ok = diff_nat
+                        if usd_diff_ok:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
-                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}%')
+                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff_usd:,.2f} _ {diff_perc:,.2f}%')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
                             print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f} ({float(quote[-2])} {quote[1]})')
                             print(f'  pair_addr: {quote[0]}')
@@ -135,7 +146,8 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f} ({float(price_nat)} {quote_tok_symb})')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
-                            print(f'\n  PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}\n')
+                            print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}')
+                            print(f'  PRICE-DIFF-NAT = {log_diff_nat}\n')
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
