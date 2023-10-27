@@ -20,8 +20,9 @@ import requests, json
 #------------------------------------------------------------#
 addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
-#LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth], ['pulsechain','WPLS',addr_wpls_pc]]
-LST_CHAIN_PARAMS = [['ethereum','WETH',addr_weth_eth]]
+LST_CHAIN_PARAMS = []
+LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
+#LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
 LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
 NET_CALL_CNT = 0
 ARB_OPP_CNT = 0
