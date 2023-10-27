@@ -84,18 +84,11 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         quote_tok_symb = v['quoteToken']['symbol']
         quote_tok_name = v['quoteToken']['name']
         
-        # check liquidity requirement
-        if liquid < USD_LIQ_REQ:
-            continue
-            
-        # ignore usd price errors
-        if price_usd == '-1.0':
-            continue
-            
-        # ignore uniswap v3 (compatible w/ v2 code?)
-        if dex_id == 'uniswap' and 'v3' in labels:
-            continue
-            
+        # set conditional for printing quote
+        #   ignore uniswap v3, usd price errors, low liquidity
+        #   NOTE: but don't want to ignore them for recursive calls
+        go_quote = not ((dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ)
+        
         if _chain_id == chain_id:
             if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
@@ -110,8 +103,9 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 
                 lst_symbs = DICT_ALL_SYMBS[addr]
                 lst_quotes = lst_symbs[-1]
-                append_qoute = True
-                for quote in lst_quotes[-1:]:
+
+                if go_quote:
+                    quote = lst_quotes[-1]
                     # if this BT symbol is not stored already
                     #   and the price is diffrent than whats stored
                     #   and price is not set to -1
