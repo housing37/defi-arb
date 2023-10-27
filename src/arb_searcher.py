@@ -88,6 +88,10 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         # set conditional for printing quote
         #   ignore uniswap v3, usd price errors, low liquidity
         #   NOTE: but don't want to ignore them for recursive calls
+        #   NOTE_2: this logic allows cought cases to be stored
+        #            but they won't be printed and have their quote list updated
+        #       HENCE, skip_quote & non-hi_liq cases will indeed be printed
+        #               when they are compared against non-skip_quote & hi_liq cases
         skip_quote = (dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ
         hi_liq = liquid > float(price_usd)
         if _chain_id == chain_id:
