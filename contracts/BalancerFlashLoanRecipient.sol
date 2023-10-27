@@ -88,7 +88,7 @@ interface IUniswapV2 {
     ) external returns (uint[] memory amounts);
 }
 
-contract FlashLoanRecipient is IFlashLoanRecipient {
+contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564)
     
