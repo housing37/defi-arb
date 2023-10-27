@@ -89,9 +89,11 @@ interface IUniswapV2 {
 }
 
 contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
-    IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564)
     
+    // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
+    IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+
     function makeFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
@@ -183,26 +185,3 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
         return result;
     }
 }
-//struct ExactOutputParams {
-//    bytes path;
-//    address recipient;
-//    uint256 deadline;
-//    uint256 amountOut;
-//    uint256 amountInMaximum;
-//}
-//
-//struct ExactInputParams {
-//    bytes path;
-//    address recipient;
-//    uint256 deadline;
-//    uint256 amountIn;
-//    uint256 amountOutMinimum;
-//}
-
-
-        
-// TODO: integrate swap logic
-//  swap token A for token B, on router 1
-//  swap token B for token A, on router 2
-// 	pay back loan + interest
-
