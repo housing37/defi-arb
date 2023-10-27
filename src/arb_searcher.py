@@ -22,14 +22,14 @@ addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
 LST_CHAIN_PARAMS = []
 LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
-LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
+#LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
 #LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
 NET_CALL_CNT = 0
 ARB_OPP_CNT = 0
 
 RUN_TIME_START = None
-USD_DIFF = 500
-USD_LIQ_REQ = 10000
+USD_DIFF = 100
+USD_LIQ_REQ = 1000
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -88,8 +88,8 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         # set conditional for printing quote
         #   ignore uniswap v3, usd price errors, low liquidity
         #   NOTE: but don't want to ignore them for recursive calls
-        go_quote = not ((dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ)
-        
+        skip_quote = (dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ
+        hi_liq = liquid > float(price_usd)
         if _chain_id == chain_id:
             if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
@@ -105,18 +105,21 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 lst_symbs = DICT_ALL_SYMBS[addr]
                 lst_quotes = lst_symbs[-1]
 
-                if go_quote:
+                # NOTE: hi_liq 'should' still let the low liquidity pairs get stored
+                #   but they won't be printed and have their quote list updated
+                if hi_liq and not skip_quote:
                     quote = lst_quotes[-1]
                     # if this BT symbol is not stored already
                     #   and the price is diffrent than whats stored
                     #   and price is not set to -1
                     if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
                         # check for price diff than what we've logged so far
-                        diff = float(quote[-1]) - float(price_usd)
+                        diff = float(price_usd) - float(quote[-1])
+                        diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
                         if diff >= USD_DIFF or diff <= -USD_DIFF:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
-                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f}')
+                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f} _ {diff_perc}%')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
                             print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
                             print(f'  pair_addr: {quote[0]}')
@@ -126,7 +129,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
-                            print(f'\n  PRICE-DIFF = ${diff:,.2f}\n')
+                            print(f'\n  PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}% diff\n')
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
@@ -217,6 +220,7 @@ def go_main():
         print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())} ...')
         [print(k, d0[k][0:5]) for k in d0.keys()]
         print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())}\n')
+        print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
 
 if __name__ == "__main__":
     ## start ##

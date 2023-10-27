@@ -8,8 +8,70 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 
+/// @title Router token swapping functionality
+/// @notice Functions for swapping tokens via Uniswap V3
+interface ISwapRouter is IUniswapV3SwapCallback {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    /// @notice Swaps `amountIn` of one token for as much as possible of another token
+    /// @param params The parameters necessary for the swap, encoded as `ExactInputSingleParams` in calldata
+    /// @return amountOut The amount of the received token
+    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
+
+    struct ExactInputParams {
+        bytes path;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+    }
+
+    /// @notice Swaps `amountIn` of one token for as much as possible of another along the specified path
+    /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactInputParams` in calldata
+    /// @return amountOut The amount of the received token
+    function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
+
+    struct ExactOutputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 deadline;
+        uint256 amountOut;
+        uint256 amountInMaximum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    /// @notice Swaps as little as possible of one token for `amountOut` of another token
+    /// @param params The parameters necessary for the swap, encoded as `ExactOutputSingleParams` in calldata
+    /// @return amountIn The amount of the input token
+    function exactOutputSingle(ExactOutputSingleParams calldata params) external payable returns (uint256 amountIn);
+
+    struct ExactOutputParams {
+        bytes path;
+        address recipient;
+        uint256 deadline;
+        uint256 amountOut;
+        uint256 amountInMaximum;
+    }
+
+    /// @notice Swaps as little as possible of one token for `amountOut` of another along the specified path (reversed)
+    /// @param params The parameters necessary for the multi-hop swap, encoded as `ExactOutputParams` in calldata
+    /// @return amountIn The amount of the input token
+    function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
+}
+
 // house_102423 (not tested)
-interface IPulseXRouter {
+interface IUniswapV2 {
     function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
@@ -44,8 +106,17 @@ contract FlashLoanRecipient is IFlashLoanRecipient {
         bytes memory userData
     ) external override {
         require(msg.sender == address(vault));
-        (address tokenA, address tokenB, uint256 amountToSwap) = abi.decode(userData, (address, address, uint256));
-
+        (address router, address tokenA, address tokenB, uint256 amountToSwap) = abi.decode(userData, (address, address, address, uint256));
+        
+        // check for uniswap v2|v3
+        if (router == address(0xE592427A0AEce92De3Edee1F18E0157C05861564)) {
+            // v3: uniswap v3
+            ISwapRouter swapRouter = ISwapRouter(router)
+        } else {
+            // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2
+            IUniswapV2 swapRouter = IUniswapV2(router)
+        }
+            
         // approve for payback when execution finished
         //  init testing: return immediately (payback right away; req funds in this contract)
         uint256 amountOwed = amounts[0] + feeAmounts[0];
@@ -56,6 +127,16 @@ contract FlashLoanRecipient is IFlashLoanRecipient {
         // house_102423 swap logic
         IPulseXRouter router_v1 = IPulseXRouter(0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02);
         IPulseXRouter router_v2 = IPulseXRouter(0x165C3410fC91EF562C50559f7d2289fEbed552d9);
+        
+        // fraxswap
+        
+        // radioshack
+        
+        // found in logs
+        //  0xcBAE5C3f8259181EB7E2309BC4c72fDF02dD56D8
+        //  0x03407772F5EBFB9B10Df007A2DD6FFf4EdE47B53
+        //  0x564C4529E12FB5a48AD609820D37D15800c1f539
+        // 	0x696708Db871B77355d6C2bE7290B27CF0Bb9B24b
         
         // balancer (ref: https://docs.balancer.fi/reference/contracts/deployment-addresses/mainnet.html)
         //  don't see 'router' address anywhere
@@ -75,6 +156,15 @@ contract FlashLoanRecipient is IFlashLoanRecipient {
         // verse (ref: https://docs.swapverse.exchange/ & https://twitter.com/Swapverse_)
         //  can't find discord or list of contract addresses
         
+        // uniswap v3
+        //  ref: https://docs.uniswap.org/contracts/v3/reference/deployments
+        //  ref: https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/SwapRouter.sol
+        0xE592427A0AEce92De3Edee1F18E0157C05861564 // SwapRouter
+        
+        // uniswap v2
+        //  ref: https://docs.uniswap.org/contracts/v2/reference/smart-contracts/router-02
+        0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D // 'UniswapV2Router02'
+        
         // solidlycom (ref: https://docs.solidly.com/resources/contract-addresses)
         //  ref: https://etherscan.io/address/0x77784f96C936042A3ADB1dD29C91a55EB2A4219f#writeProxyContract
         0x77784f96C936042A3ADB1dD29C91a55EB2A4219f // Router ('v2 contracts')
@@ -85,6 +175,7 @@ contract FlashLoanRecipient is IFlashLoanRecipient {
         //  found discord and asked for support: forward me to ask Q -> https://support.kyberswap.com/hc/en-us/requests/new
         0x1c87257F5e8609940Bc751a07BB085Bb7f8cDBE6 // DMMRouter ('Dynamic Fee')
         0x5649B4DD00780e99Bab7Abb4A3d581Ea1aEB23D0 // KSRouter ('Static Fee')
+        0x5F1dddbf348aC2fbe22a163e30F99F9ECE3DD50a // found in logs (etherscan.io say kyberswap)
         
         // pancakeswap (verified on discord)
         //  ref: https://etherscan.io/address/0x13f4EA83D0bd40E75C8222255bc855a974568Dd4#writeContract
