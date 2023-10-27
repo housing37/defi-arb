@@ -109,7 +109,7 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
         bytes memory userData
     ) external override {
         require(msg.sender == address(vault));
-        (address router_0, address router_1, address[] path_0, address[] path_1, uint256 amntOutMin_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
+        (address router_0, address router_1, address[] path_0, address[] path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
         
         // approve for payback when execution finished
         //  init testing: return immediately (payback right away; req funds in this contract)
@@ -123,10 +123,10 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
         if (router_0 == uniswapRouterV3) {
             // convert path to bytes memory
             bytes memory bytes_path = addressesToBytes(path_0)
-            amntOut = swap_v3(router_0, bytes_path, 1, uint256 amntOutMin_0)
+            amntOut = swap_v3(router_0, bytes_path, amntIn_0, 1)
         } else {
             // found uniswap v2 protocol integration
-            amntOut = swap_v2(router_0, path_0, 1, amntOutMin_0)
+            amntOut = swap_v2(router_0, path_0, amntIn_0, 1)
         }
         
         // check for uniswap v3 integration (requires bytes memory 'path' param)
