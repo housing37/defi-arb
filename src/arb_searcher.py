@@ -85,15 +85,6 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         quote_tok_symb = v['quoteToken']['symbol']
         quote_tok_name = v['quoteToken']['name']
         
-        # set conditional for printing quote
-        #   ignore uniswap v3, usd price errors, low liquidity
-        #   NOTE: but don't want to ignore them for recursive calls
-        #   NOTE_2: this logic allows cought cases to be stored
-        #            but they won't be printed and have their quote list updated
-        #       HENCE, skip_quote & non-hi_liq cases will indeed be printed
-        #               when they are compared against non-skip_quote & hi_liq cases
-        skip_quote = (dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ
-        hi_liq = liquid > float(price_usd)
         if _chain_id == chain_id:
             if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
@@ -109,8 +100,18 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 lst_symbs = DICT_ALL_SYMBS[addr]
                 lst_quotes = lst_symbs[-1]
 
-                # NOTE: hi_liq 'should' still let the low liquidity pairs get stored
-                #   but they won't be printed and have their quote list updated
+                # set conditional for printing quote
+                #   ignore uniswap v3, usd price errors, low liquidity
+                #   NOTE: but don't want to ignore them for recursive calls
+                #   NOTE_2: this logic allows cought cases to be stored
+                #    but they won't be printed and have their quote list updated
+                #   HENCE, skip_quote & non-hi_liq cases will indeed be printed
+                #    when they are compared against non-skip_quote & hi_liq cases
+                skip_quote = (dex_id == 'uniswap' and 'v3' in labels) or price_usd == '-1.0' or liquid < USD_LIQ_REQ
+                hi_liq = liquid > float(price_usd)
+                
+                # NOTE: hi_liq still lets the low liq pairs get stored
+                #   but low liq pairs not printed & have no quote list updates
                 if hi_liq and not skip_quote:
                     quote = lst_quotes[-1]
                     # if this BT symbol is not stored already
@@ -123,7 +124,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         if diff >= USD_DIFF or diff <= -USD_DIFF:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
-                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f} _ {diff_perc}%')
+                            print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}%')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
                             print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
                             print(f'  pair_addr: {quote[0]}')
