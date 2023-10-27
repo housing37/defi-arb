@@ -49,7 +49,7 @@ def exe_dexscreener_request(url='nil_url'):
         
 def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
     global NET_CALL_CNT
-    if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ {get_time_now()}', cStrDivider, sep='\n')
+    if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ [{get_time_now()}]', cStrDivider, sep='\n')
     dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
 
     print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
@@ -78,6 +78,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
         dex_id = v['dexId']
         labels = ['-1'] if 'labels' not in v else v['labels']
         price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
+        price_nat = '-1.0' if 'priceNative' not in v else v['priceNative']
         base_tok_addr = v['baseToken']['address']
         base_tok_symb = v['baseToken']['symbol']
         base_tok_name = v['baseToken']['name']
@@ -89,7 +90,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
             if v['baseToken']['address'] and v['baseToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['baseToken']['address']
                 symb = v['baseToken']['symbol']
-                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd]]]
+                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd]]]
                 #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                 scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=plog)
             elif v['baseToken']['address'] in DICT_ALL_SYMBS:
@@ -126,23 +127,23 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
                             print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}%')
                             print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
-                            print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f}')
+                            print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f} ({float(quote[-2])} {quote[1]})')
                             print(f'  pair_addr: {quote[0]}')
                             print(f'  LIQUIDITY: ${quote[3]:,.2f}')
                             print('\n  cross-dex ...')
                             print(f'   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}')
-                            print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}')
+                            print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f} ({float(price_nat)} {quote_tok_symb})')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
                             print(f'\n  PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}\n')
 
-                    DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
+                    DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
 
             if v['quoteToken']['address'] and v['quoteToken']['address'] not in DICT_ALL_SYMBS:
                 addr = v['quoteToken']['address']
                 symb = v['quoteToken']['symbol']
-                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', -1, '-1']]]
+                DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [['', '', '', -1, '-1', '-1']]]
                 #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
                 scrape_dex_recurs(addr, symb, chain_id, DICT_ALL_SYMBS, plog=plog)
             elif v['quoteToken']['address'] in DICT_ALL_SYMBS:
