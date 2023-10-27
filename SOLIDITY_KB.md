@@ -32,5 +32,8 @@ In Solidity, there are various function modifiers and decorators that can change
 
 10. Function Overloading: Solidity supports function overloading, which means you can have multiple functions with the same name but different parameter lists.
 
+11. The `override` keyword is used to explicitly indicate in a derived contract that a function is intended to override a function from a base contract.
+    When you use the override keyword, you're essentially telling the compiler that you intend to replace a function in the base contract with a new implementation in the derived contract.
+    
 These modifiers and decorators allow you to control how functions behave, who can call them, and what changes they can make to the contract state. You can use a combination of these modifiers and decorators to design the behavior of your smart contracts according to your requirements.
 
