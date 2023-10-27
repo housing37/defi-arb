@@ -134,7 +134,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f}')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
-                            print(f'\n  PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}% diff\n')
+                            print(f'\n  PRICE-DIFF = ${diff:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}\n')
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
