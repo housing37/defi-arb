@@ -10,8 +10,6 @@ cStrDivider_1 = '#--------------------------------------------------------------
 #------------------------------------------------------------#
 import sys, os, time
 from datetime import datetime
-#import requests
-#import _req_pulsex as _p, _req_bond as _b
 from web3 import Account, Web3
 from ethereum.abi import encode_abi
 import env
@@ -22,26 +20,6 @@ import env
 #------------------------------------------------------------#
 #   GLOBALS
 #------------------------------------------------------------#
-#addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-#addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
-#LST_CHAIN_PARAMS = []
-#LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
-##LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
-#LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
-#NET_CALL_CNT = 0
-#ARB_OPP_CNT = 0
-#
-#RUN_TIME_START = None
-#USD_DIFF = 1000
-#USD_LIQ_REQ = 10000
-
-## ** COMMENT BEFORE COMMIT **
-#from read_env import read_env #ref: https://github.com/sloria/read_env
-#try: read_env() # recursively traverse up dir tree looking for '.env' file
-#except: print(" ERROR: no .env files found ")
-#sender_address_0 = os.environ['PUBLIC_KEY_4']
-#sender_secret_0 = os.environ['PRIVATE_KEY_4']
-
 # STATIC CONSTANTS
 SENDER_ADDRESS = env.sender_address_0 # default
 SENDER_SECRET = env.sender_secret_0 # default
@@ -82,12 +60,6 @@ LST_ARB = [
         [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
         [AMNT_IN_0, AMNT_OUT_MIN_1]
     ]
-    
-#LST_ARB = [
-#        [ROUTER_UNISWAP_V3, ROUTER_PANCAKESWAP_V3],
-#        [[ADDR_DAI, ADDR_WBTC], [ADDR_WBTC, ADDR_rETH]],
-#        [AMNT_IN_0, AMNT_OUT_MIN_1]
-#    ]
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -142,6 +114,7 @@ def tx_sign_send_wait(tx, wait_rec=True):
 # router contract, tok_contr (in), amount_exact (in_ET-T|out_T-ET), swap_path, swap_type (ET-T|T-ET)
 def go_swap(rout_contr, tok_contr, amount_exact, swap_path=[], swap_type=1, slip_perc=0, time_out_sec=180):
     global W3, ACCOUNT, LST_ARB
+    
     # check tok_contr allowance for swap, and approve if needed, then check again
     #print('\nSTART - validate allowance ...', cStrDivider_1, sep='\n')
     #allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
@@ -158,18 +131,12 @@ def go_swap(rout_contr, tok_contr, amount_exact, swap_path=[], swap_type=1, slip
 
     amntIn_0 = W3.toWei(LST_ARB[2][0], 'ether')
     amntOutMin_1 = W3.toWei(LST_ARB[2][1], 'ether')
-
-    # Encode the `userData` using the ABI
-    #bytes_path_0 = bytes(int(value, 16) for value in addr_path_0)
-    #bytes_path_1 = bytes(int(value, 16) for value in addr_path_1)
-    #data_to_encode = (router_addr_0, router_addr_1, bytes_path_0, bytes_path_1, amntIn_0, amntOutMin_1)
-    #encoded_data = encode_abi(['address', 'bytes', 'bytes', 'uint256', 'uint256'], data_to_encode)
     
     data_to_encode = (router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1)
     encoded_data = encode_abi(['address', 'address[]', 'address[]', 'uint256', 'uint256'], data_to_encode)
 
-    # Define the array of IERC20 tokens
-    lst_tok_addr = [addr_path_0[0]] # Add more tokens as needed
+    # Define the array of IERC20 tokens for loan (w/ amounts)
+    lst_tok_addr = [addr_path_0[0]]
     lst_tok_amnt = [amntIn_0]
 
     # Prepare the transaction
@@ -183,64 +150,11 @@ def go_swap(rout_contr, tok_contr, amount_exact, swap_path=[], swap_type=1, slip
     }
 
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx, wait_rec=True)
-    
-#    from web3 import Web3
-#    from ethereum.abi import encode_abi
-
-    # Connect to your Ethereum provider (e.g., Infura)
-#    w3 = Web3(Web3.HTTPProvider("YOUR_INFURA_PROJECT_URL"))
-
-    # Replace with your contract address and ABI
-#    contract_address = "0xYourContractAddress"
-#    contract_abi = [...]  # Define your contract's ABI
-
-    # Set your account (sender) and private key
-#    account = Web3.toChecksumAddress("0xYourSenderAddress")
-#    private_key = "YOUR_PRIVATE_KEY"
-
-    # Create an instance of the contract
-#    contract = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
-
-    # Define the data for the `userData` field
-#    tokenB = "0xYourTokenBAddress"
-#    amountToSwap = 1000  # Replace with your desired amount
-    
-    # Encode the array of addresses using the ABI
-    #encoded_addresses = encode_abi(['address[]'], [addr_to_encode])
-#    addr_to_encode_0 = ["0xWETH", "0xWBTC"]  # Add more addresses as needed
-#    path_byte_arr_0 = bytes(int(value, 16) for value in addr_to_encode_0)
-    
-#    addr_to_encode_1 = ["0xWBTC", "0xWETH"]  # Add more addresses as needed
-#    path_byte_arr_1 = bytes(int(value, 16) for value in addr_to_encode_1)
-
-#    addr_path_0 = ["0xWETH", "0xWBTC"]  # Add more addresses as needed
-#    addr_path_1 = ["0xWBTC", "0xWETH"]  # Add more addresses as needed
-    
-
-    # Define the data for the `userData` field
-#    router_0 = ROUTER_UNISWAP_V3
-#    router_1 = ROUTER_PANCAKESWAP_V3
-
-#    addr_path_0 = [ADDR_WETH, ADDR_WBTC]
-#    addr_path_1 = [ADDR_WBTC, ADDR_WETH]
-#    amntIn_0 = W3.toWei('19.06497', 'ether')
-#    amntOutMin_1 = W3.toWei('19.06146', 'ether')
-
-#    addr_path_0 = [ADDR_DAI, ADDR_WBTC]
-#    addr_path_1 = [ADDR_WBTC, ADDR_rETH]
-#    amntIn_0 = W3.toWei('33680.246', 'ether')
-#    amntOutMin_1 = W3.toWei('17.4821', 'ether')
-    
-
-    # Sign and send the transaction
-#    signed_transaction = w3.eth.account.signTransaction(transaction, SENDER_SECRET)
-#    tx_hash = w3.eth.sendRawTransaction(signed_transaction.rawTransaction)
-
-    # Wait for the transaction to be mined (you can implement this using web3.py)
-    # ...
-    
-    # send and send tx (wait_rec)
-#    swap_tx = swap_tx.buildTransaction(tx_params)
+    # Encode the `userData` using the ABI
+    #bytes_path_0 = bytes(int(value, 16) for value in addr_path_0)
+    #bytes_path_1 = bytes(int(value, 16) for value in addr_path_1)
+    #data_to_encode = (router_addr_0, router_addr_1, bytes_path_0, bytes_path_1, amntIn_0, amntOutMin_1)
+    #encoded_data = encode_abi(['address', 'bytes', 'bytes', 'uint256', 'uint256'], data_to_encode)
 
 #------------------------------------------------------------#
 #   DEFAULT SUPPORT                                          #
