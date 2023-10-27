@@ -54,6 +54,10 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # infura support
 ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY']
 
+# wallet support
+sender_address_0 = os.environ['PUBLIC_KEY_4']
+sender_secret_0 = os.environ['PRIVATE_KEY_4']
+
 #============================================================================#
 ## s3 & receipt constants
 #============================================================================#

@@ -22,13 +22,13 @@ addr_weth_eth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 addr_wpls_pc = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
 LST_CHAIN_PARAMS = []
 LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
-#LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
-LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
+LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
+#LST_DEX_ROUTERS = ['solidlycom', 'kyberswap', 'pancakeswap', 'sushiswap']
 NET_CALL_CNT = 0
 ARB_OPP_CNT = 0
 
 RUN_TIME_START = None
-USD_DIFF = 1000
+USD_DIFF = 500
 USD_LIQ_REQ = 10000
 
 #------------------------------------------------------------#
@@ -61,7 +61,7 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
 
 # scrape dexscreener recursively
 def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT, LST_DEX_ROUTERS
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
