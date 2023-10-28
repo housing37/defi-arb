@@ -10,7 +10,7 @@ cStrDivider_1 = '#--------------------------------------------------------------
 #------------------------------------------------------------#
 import sys, os, time, traceback
 from datetime import datetime
-from web3 import Account, Web3
+from web3 import Account, Web3, HTTPProvider
 from ethereum.abi import encode_abi # pip install ethereum
 import env
 #import inspect # this_funcname = inspect.stack()[0].function
@@ -27,7 +27,7 @@ AMNT_MAX = 115792089237316195423570985008687907853269984665640564039457584007913
 RPC_URL = 'https://rpc.pulsechain.com'
 #RPC_URL = 'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'
 
-CONTR_ARB_ADDR = "0x904f51cab7CBF3251D2E5D20831F9E31FA11E4E1" # deployed 102823
+CONTR_ARB_ADDR = "0xFD2AaD9Ef84C001a3622188493A8AFd9436892c8" # deployed 102823
 print(f'reading abi file for contract: {CONTR_ARB_ADDR}...')
 with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
 
@@ -90,7 +90,7 @@ def set_approval(contract_a, contract_b, amnt=-1):
     signed_tx = W3.eth.account.signTransaction(tx_data, private_key=ACCOUNT.key) # sign tx
     tx_hash = W3.eth.sendRawTransaction(signed_tx.rawTransaction) # send tx
     
-    print(f'[{get_time_now()}] _ WAITING for mined receipt _ tx_hash: {tx_hash.hex()} ...') # wait for receipt
+    print(f'[{get_time_now()}] _ WAITING for mined receipt\n tx_hash: {tx_hash.hex()} ...') # wait for receipt
     tx_receipt = W3.eth.waitForTransactionReceipt(tx_hash)
     if tx_receipt and tx_receipt['status'] == 1:
         print(f"[{get_time_now()}] _ 'approve' SUCCESS:\n contract_a: {contract_a.address}\n approved contract_b: {contract_b.address}\n to spend SENDER_ADDRESS: {ACCOUNT.address} tokens\n amnt allowed: {amnt}\n tx_hash: {tx_hash.hex()}\n Transaction receipt: {tx_receipt}")
@@ -103,10 +103,10 @@ def tx_sign_send_wait(tx, wait_rec=True):
     tx_hash = W3.eth.send_raw_transaction(signed_tx.rawTransaction)
     print(cStrDivider_1, f'[{get_time_now()}] _ TX sent\n tx_hash: {tx_hash.hex()}\n tx_params: {tx}\n wait_rec={wait_rec}', cStrDivider_1, sep='\n')
     if wait_rec:
-        print(f'[{get_time_now()}] _ WAITING for mined tx receipt _ tx_hash: {tx_hash.hex()} ...') # wait for receipt
+        print(f'[{get_time_now()}] _ WAITING for mined tx receipt\n tx_hash: {tx_hash.hex()} ...') # wait for receipt
         tx_receipt = W3.eth.wait_for_transaction_receipt(tx_hash)
         if tx_receipt and tx_receipt['status'] == 1:
-            print(f"[{get_time_now()}] _ SUCCESS! tx mined _ tx_hash: {tx_hash.hex()}", cStrDivider_1, sep='\n')
+            print(f"[{get_time_now()}] _ SUCCESS! tx mined\n tx_hash: {tx_hash.hex()}", cStrDivider_1, sep='\n')
             print(cStrDivider_1, f'TRANSACTION RECEIPT:\n {tx_receipt}', cStrDivider_1, sep='\n')
         else:
             print(cStrDivider, cStrDivider, f'\n[{get_time_now()}] _ *ERROR* _ "build_sign_send_tx" execution failed...\n tx_hash: {tx_hash.hex()}\n TRANSACTION RECEIPT: {tx_receipt}\n', cStrDivider, cStrDivider, sep='\n')
@@ -163,6 +163,69 @@ def go_loan():
 
     print('sing, send, and wait for receipt...')
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
+
+def go_transfer():
+    print('getting keys and intializing web3...')
+    SENDER_ADDRESS = env.sender_address_0 # default
+    SENDER_SECRET = env.sender_secret_0 # default
+
+    addr_arb_contr = '0xFD2AaD9Ef84C001a3622188493A8AFd9436892c8'
+    with open("../contracts/BalancerFLR.json", "r") as file: abi_arb_contr = file.read()
+    addr_pdai = "0x6B175474E89094C44Da98b954EedeAC495271d0F" # pDAI token
+    abi_pdai = [
+        {
+            "constant": True,
+            "inputs": [{"name": "_owner", "type": "address"}],
+            "name": "balanceOf",
+            "outputs": [{"name": "balance", "type": "uint256"}],
+            "type": "function"
+        },
+        {
+            "constant": True,
+            "inputs": [],  # No inputs required
+            "name": "symbol",
+            "outputs": [{"name": "", "type": "string"}],
+            "type": "function"
+        }
+    ]
+    W3 = Web3(HTTPProvider(f'https://rpc.pulsechain.com'))
+    pdai_contr = W3.eth.contract(address=addr_pdai, abi=abi_pdai)
+    arb_contr = W3.eth.contract(address=addr_arb_contr, abi=abi_arb_contr)
+
+    # check pdai balance
+    pdai_bal = pdai_contr.functions.balanceOf(addr_arb_contr).call()
+    print(f'pdai balance: {pdai_bal}\n for contr: {addr_arb_contr}')
+
+    # transfer pdai out (102823: doesn't seem to work)
+    #print('attempting "transferTokens"...')
+    #arb_contr.functions.transferTokens(addr_pdai, SENDER_ADDRESS, 1)
+    print('preparing tx...')
+    tx_params = {
+        'chainId':369, # required
+        'from': ACCOUNT.address,
+        'to': CONTR_ARB_ADDR,
+        #'gas': 2000000,  # Adjust gas limit as needed
+        #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
+        "gas": 20_000_000,  # Adjust the gas limit as needed
+        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+        'data': CONTR_ARB.encodeABI(fn_name='transferTokens', args=[addr_pdai, SENDER_ADDRESS, 1 * 10**18]),
+        
+    }
+    print('calculating gas...')
+    lst_gas_params = get_gas_params_lst(min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
+    for d in lst_gas_params: tx_params.update(d) # append gas params
+
+    print('sing, send, and wait for receipt...')
+    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
+
+    # check pdai balance again
+    pdai_bal = pdai_contr.functions.balanceOf(addr_arb_contr).call()
+    print(f'pdai balance: {pdai_bal}\n for contr: {addr_arb_contr}')
+
+    # check PLS balance
+    wei_bal = W3.eth.getBalance(addr_arb_contr)
+    eth_bal = W3.fromWei(wei_bal, 'ether')
+    print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr}')
 
 #------------------------------------------------------------#
 #   DEFAULT SUPPORT                                          #
@@ -255,7 +318,9 @@ if __name__ == "__main__":
     
     ## exe ##
     try:
-        go_loan()
+        if sys.argv[-1] == 'loan': go_loan()
+        if sys.argv[-1] == 'trans': go_transfer()
+        
     except Exception as e:
         print_except(e, debugLvl=0)
     

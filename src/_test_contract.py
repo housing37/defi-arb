@@ -33,8 +33,9 @@ arb_contr = W3.eth.contract(address=addr_arb_contr, abi=abi_arb_contr)
 pdai_bal = pdai_contr.functions.balanceOf(addr_arb_contr).call()
 print(f'pdai balance: {pdai_bal}\n for contr: {addr_arb_contr}')
 
-# transfer pdai out
-arb_contr.functions().transferTokens(addr_pdai, SENDER_ADDRESS, 1)
+# transfer pdai out (102823: doesn't seem to work)
+#print('attempting "transferTokens"...')
+#arb_contr.functions.transferTokens(addr_pdai, SENDER_ADDRESS, 1)
 
 # check pdai balance again
 pdai_bal = pdai_contr.functions.balanceOf(addr_arb_contr).call()
@@ -43,4 +44,4 @@ print(f'pdai balance: {pdai_bal}\n for contr: {addr_arb_contr}')
 # check PLS balance
 wei_bal = W3.eth.getBalance(addr_arb_contr)
 eth_bal = W3.fromWei(wei_bal, 'ether')
-print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr')
+print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr}')
