@@ -24,7 +24,7 @@ interface IUniswapV2 {
     ) external returns (uint[] memory amounts);
 }
 
-contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
+contract BalancerFLR is IFlashLoanRecipient {
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
