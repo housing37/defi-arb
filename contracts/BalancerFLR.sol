@@ -25,16 +25,21 @@ interface IUniswapV2 {
 }
 
 contract BalancerFLR is IFlashLoanRecipient {
-    address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+    address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    address private _owner;
+    
+    constructor() {
+        _owner = msg.sender;
+    }
 
     function makeFlashLoan(
         IERC20[] memory tokens,
         uint256[] memory amounts,
         bytes memory userData
     ) external {
+        require(msg.sender == _owner, "loan to owner only");
         vault.flashLoan(this, tokens, amounts, userData);
     }
     
@@ -44,7 +49,7 @@ contract BalancerFLR is IFlashLoanRecipient {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "loan from vault only");
         (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
         
         // approve for payback when execution finished
@@ -75,6 +80,24 @@ contract BalancerFLR is IFlashLoanRecipient {
             // found uniswap v2 protocol integration
             amntOut = swap_v2(router_1, path_1, amntOut, amntOutMin_1);
         }
+    }
+    
+    receive() external payable {}
+    
+    // Function to transfer ERC20 tokens to a target address
+    function transferTokens(address token, address to, uint256 amount) external {
+        // Check that the caller is the owner or has the appropriate permissions
+        require(msg.sender == _owner, "only owner");
+        
+        // Create an instance of the ERC20 token
+        IERC20 tok = IERC20(token);
+
+        // Check the contract's balance of the token
+        uint256 contractBalance = tok.balanceOf(address(this));
+        require(contractBalance >= amount, "Insufficient balance in the contract");
+
+        // Transfer tokens to the target address
+        tok.transfer(to, amount);
     }
     
     function swap_v3(address router, bytes memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
