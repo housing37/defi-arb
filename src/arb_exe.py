@@ -29,26 +29,6 @@ pc_main = f'https://rpc.pulsechain.com'
 eth_main_cid=1
 pc_main_cid=369
 
-## SETTINGS ##
-SENDER_ADDRESS = env.sender_address_3 # deploy from
-SENDER_SECRET = env.sender_secret_3 # deploy from
-
-RPC_URL = eth_main
-CHAIN_ID = eth_main_cid
-#RPC_URL = pc_main
-#CHAIN_ID = pc_main_cid
-
-CONTR_ARB_ADDR = "0x59012124c297757639e4ab9b9e875ec80a5c51da" # deployed eth main 102823_1550
-#CONTR_ARB_ADDR = "0x892c6304870dbCeC69697D41298E9543B055F476" # deployed pc main 102823
-
-print(f'reading abi file for contract: {CONTR_ARB_ADDR}...')
-with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
-
-print('connecting to pulsechain ... (getting account for secret)')
-W3 = Web3(Web3.HTTPProvider(RPC_URL))
-ACCOUNT = Account.from_key(SENDER_SECRET) # default
-CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
-
 ROUTER_UNISWAP_V3 = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 ROUTER_PANCAKESWAP_V3 = '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4'
 
@@ -60,21 +40,43 @@ ADDR_WBTC = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
 ADDR_USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
 ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 
+ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
+
+## SETTINGS ##
+SENDER_ADDRESS = env.sender_address_3 # deploy from
+SENDER_SECRET = env.sender_secret_3 # deploy from
+
+CONTR_ARB_ADDR = "0x59012124c297757639e4ab9b9e875ec80a5c51da" # deployed eth main 102823_1550
+RPC_URL = eth_main
+CHAIN_ID = eth_main_cid
+#CONTR_ARB_ADDR = "0x892c6304870dbCeC69697D41298E9543B055F476" # deployed pc main 102823
+#RPC_URL = pc_main
+#CHAIN_ID = pc_main_cid
+
+print(f'reading contract abi file: {CONTR_ARB_ADDR}...')
+with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
+
+print(f'finalizing arb settings...')
 ROUTER_0 = ROUTER_UNISWAP_V3
 ROUTER_1 = ROUTER_UNISWAP_V3
 
 ADDR_IN_0 = ADDR_WETH
-ADDR_OUT_MIN_0 = ADDR_WBTC
-ADDR_IN_1 = ADDR_WBTC
-ADDR_OUT_MIN_1 = ADDR_USDC
+ADDR_OUT_MIN_0 = ADDR_BBTC
+ADDR_IN_1 = ADDR_BBTC
+ADDR_OUT_MIN_1 = ADDR_WBTC
 
-AMNT_IN_0 = '34041.08509'
-AMNT_OUT_MIN_1 = '19.02837'
+AMNT_IN_0 = '18.9422'
+AMNT_OUT_MIN_1 = '0.9996'
 LST_ARB = [
         [ROUTER_0, ROUTER_1],
         [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
         [AMNT_IN_0, AMNT_OUT_MIN_1]
     ]
+
+print('connecting to pulsechain ... (getting account for secret)')
+W3 = Web3(Web3.HTTPProvider(RPC_URL))
+ACCOUNT = Account.from_key(SENDER_SECRET) # default
+CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -128,7 +130,7 @@ def tx_sign_send_wait(tx, wait_rec=True):
 
 # router contract, tok_contr (in), amount_exact (in_ET-T|out_T-ET), swap_path, swap_type (ET-T|T-ET)
 def go_loan():
-    global W3, ACCOUNT, LST_ARB, CHAIN_ID, RPC_URL
+    global W3, ACCOUNT, LST_ARB, CHAIN_ID, RPC_URL, CONTR_ARB
     
     # check tok_contr allowance for swap, and approve if needed, then check again
     #print('\nSTART - validate allowance ...', cStrDivider_1, sep='\n')
@@ -138,6 +140,7 @@ def go_loan():
     #    allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
     #print(cStrDivider_1, 'DONE - validate allowance', sep='\n')
     
+    print('setting arb tx params...')
     addr_arb_contr = CONTR_ARB_ADDR
     
     router_0 = LST_ARB[0][0]
@@ -149,6 +152,7 @@ def go_loan():
     amntIn_0 = W3.toWei(LST_ARB[2][0], 'ether')
     amntOutMin_1 = W3.toWei(LST_ARB[2][1], 'ether')
 
+    print('encoding arb tx abi...')
     # NOTE: if receive runtime error w/ encode_abi
     #   pointing to: /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/ethereum/abi.py
     #   then check the len of list of types vs len of data_to_encode
@@ -175,6 +179,12 @@ def go_loan():
     lst_gas_params = get_gas_params_lst(RPC_URL, min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
     for d in lst_gas_params: tx_params.update(d) # append gas params
 
+    #gas_estimate = CONTR_ARB.constructor().estimateGas({'from': ACCOUNT.address})
+    gas_estimate = CONTR_ARB.estimateGas(tx_params)
+    print(f"Estimated gas cost for flash laon arb 'makeFlashLoan': {gas_estimate}")
+    proc = input('\n procced? [y/n]\n > ')
+    assert proc == 'y', "Canceled 'makeFlashLoan', exiting"
+    
     print('sing, send, and wait for receipt...')
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
 
@@ -333,8 +343,8 @@ def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=T
         #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
         #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
         gas_limit = 2_000_000 # max gas units to use for tx (required)
-        gas_price = W3.to_wei('13', 'gwei') # price to pay for each unit of gas (optional?)
-        max_fee = W3.to_wei('18', 'gwei') # max fee per gas unit to pay (optional?)
+        gas_price = W3.to_wei('18', 'gwei') # price to pay for each unit of gas (optional?)
+        max_fee = W3.to_wei('20', 'gwei') # max fee per gas unit to pay (optional?)
         max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
         #max_priority_fee = W3.to_wei('0.000000003', 'ether')
 
@@ -403,9 +413,9 @@ if __name__ == "__main__":
     
     ## exe ##
     try:
-        if sys.argv[-1] == 'loan': go_loan()
-        if sys.argv[-1] == 'trans': go_transfer()
-        if sys.argv[-1] == 'withdraw': go_withdraw()
+        if sys.argv[-1] == '-loan': go_loan()
+        if sys.argv[-1] == '-trans': go_transfer()
+        if sys.argv[-1] == '-withdraw': go_withdraw()
         
     except Exception as e:
         print_except(e, debugLvl=0)
