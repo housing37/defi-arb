@@ -27,7 +27,7 @@ AMNT_MAX = 115792089237316195423570985008687907853269984665640564039457584007913
 RPC_URL = 'https://rpc.pulsechain.com'
 #RPC_URL = 'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'
 
-CONTR_ARB_ADDR = "0xFD2AaD9Ef84C001a3622188493A8AFd9436892c8" # deployed 102823
+CONTR_ARB_ADDR = "0x892c6304870dbCeC69697D41298E9543B055F476" # deployed 102823
 print(f'reading abi file for contract: {CONTR_ARB_ADDR}...')
 with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
 
@@ -126,6 +126,8 @@ def go_loan():
     #    allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
     #print(cStrDivider_1, 'DONE - validate allowance', sep='\n')
     
+    addr_arb_contr = CONTR_ARB_ADDR
+    
     router_0 = LST_ARB[0][0]
     router_1 = LST_ARB[0][1]
 
@@ -149,7 +151,7 @@ def go_loan():
     tx_params = {
         'chainId':369, # required
         'from': ACCOUNT.address,
-        'to': CONTR_ARB_ADDR,
+        'to': addr_arb_contr,
         #'gas': 2000000,  # Adjust gas limit as needed
         #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
         "gas": 20_000_000,  # Adjust the gas limit as needed
@@ -169,7 +171,7 @@ def go_transfer():
     SENDER_ADDRESS = env.sender_address_0 # default
     SENDER_SECRET = env.sender_secret_0 # default
 
-    addr_arb_contr = '0xFD2AaD9Ef84C001a3622188493A8AFd9436892c8'
+    addr_arb_contr = CONTR_ARB_ADDR
     with open("../contracts/BalancerFLR.json", "r") as file: abi_arb_contr = file.read()
     addr_pdai = "0x6B175474E89094C44Da98b954EedeAC495271d0F" # pDAI token
     abi_pdai = [
@@ -203,7 +205,7 @@ def go_transfer():
     tx_params = {
         'chainId':369, # required
         'from': ACCOUNT.address,
-        'to': CONTR_ARB_ADDR,
+        'to': addr_arb_contr,
         #'gas': 2000000,  # Adjust gas limit as needed
         #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
         "gas": 20_000_000,  # Adjust the gas limit as needed
@@ -226,6 +228,57 @@ def go_transfer():
     wei_bal = W3.eth.getBalance(addr_arb_contr)
     eth_bal = W3.fromWei(wei_bal, 'ether')
     print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr}')
+
+def go_withdraw():
+    print('getting keys and intializing web3...')
+    SENDER_ADDRESS = env.sender_address_1 # default
+    SENDER_SECRET = env.sender_secret_1 # default
+
+    addr_arb_contr = CONTR_ARB_ADDR
+    with open("../contracts/BalancerFLR.json", "r") as file: abi_arb_contr = file.read()
+
+    W3 = Web3(HTTPProvider(f'https://rpc.pulsechain.com'))
+    arb_contr = W3.eth.contract(address=addr_arb_contr, abi=abi_arb_contr)
+
+    # check PLS balances
+    wei_bal = W3.eth.getBalance(addr_arb_contr)
+    eth_bal = W3.fromWei(wei_bal, 'ether')
+    print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr}')
+    
+    wei_bal = W3.eth.getBalance(SENDER_ADDRESS)
+    eth_bal = W3.fromWei(wei_bal, 'ether')
+    print(f'PLS balance: {eth_bal}\n for contr: {SENDER_ADDRESS}')
+
+    # transfer pdai out (102823: doesn't seem to work)
+    #print('attempting "transferTokens"...')
+    #arb_contr.functions.transferTokens(addr_pdai, SENDER_ADDRESS, 1)
+    print('preparing tx...')
+    tx_params = {
+        'chainId':369, # required
+        'from': ACCOUNT.address,
+        'to': addr_arb_contr,
+        #'gas': 2000000,  # Adjust gas limit as needed
+        #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
+        "gas": 20_000_000,  # Adjust the gas limit as needed
+        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+        'data': CONTR_ARB.encodeABI(fn_name='withdraw', args=[10 * 10**18]),
+        
+    }
+    print('calculating gas...')
+    lst_gas_params = get_gas_params_lst(min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
+    for d in lst_gas_params: tx_params.update(d) # append gas params
+
+    print('sing, send, and wait for receipt...')
+    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
+
+    # check PLS balances again
+    wei_bal = W3.eth.getBalance(addr_arb_contr)
+    eth_bal = W3.fromWei(wei_bal, 'ether')
+    print(f'PLS balance: {eth_bal}\n for contr: {addr_arb_contr}')
+    
+    wei_bal = W3.eth.getBalance(SENDER_ADDRESS)
+    eth_bal = W3.fromWei(wei_bal, 'ether')
+    print(f'PLS balance: {eth_bal}\n for contr: {SENDER_ADDRESS}')
 
 #------------------------------------------------------------#
 #   DEFAULT SUPPORT                                          #
@@ -320,6 +373,7 @@ if __name__ == "__main__":
     try:
         if sys.argv[-1] == 'loan': go_loan()
         if sys.argv[-1] == 'trans': go_transfer()
+        if sys.argv[-1] == 'withdraw': go_withdraw()
         
     except Exception as e:
         print_except(e, debugLvl=0)

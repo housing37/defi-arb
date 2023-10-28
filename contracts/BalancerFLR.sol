@@ -28,7 +28,7 @@ contract BalancerFLR is IFlashLoanRecipient {
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    address private _owner;
+    address public _owner;
     
     constructor() {
         _owner = msg.sender;
@@ -82,13 +82,23 @@ contract BalancerFLR is IFlashLoanRecipient {
         }
     }
     
+    modifier onlyOwner() {
+        // Check that the caller is the owner or has the appropriate permissions
+        require(msg.sender == _owner, "Only owner");
+        _;
+    }
+
+    function withdraw(uint256 amount) external onlyOwner {
+        require(address(this).balance >= amount, "Insufficient native token balance");
+        
+        // cast owner address to a 'payable' address so it can receive ETH
+        payable(_owner).transfer(amount);
+    }
+    
     receive() external payable {}
     
     // Function to transfer ERC20 tokens to a target address
-    function transferTokens(address token, address to, uint256 amount) external {
-        // Check that the caller is the owner or has the appropriate permissions
-        require(msg.sender == _owner, "only owner");
-        
+    function transferTokens(address token, address to, uint256 amount) external onlyOwner {
         // Create an instance of the ERC20 token
         IERC20 tok = IERC20(token);
 

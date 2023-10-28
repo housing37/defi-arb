@@ -1,26 +1,92 @@
 from web3 import Web3, HTTPProvider
+from web3.middleware import construct_sign_and_send_raw_middleware
+from web3.gas_strategies.time_based import fast_gas_price_strategy
 import env
 
 print('getting keys and intializing web3...')
-SENDER_ADDRESS = env.sender_address_1 # default
-SENDER_SECRET = env.sender_secret_1 # default
+SENDER_ADDRESS = env.sender_address_1 # deploy from
+SENDER_SECRET = env.sender_secret_1 # deploy from
+#SENDER_ADDRESS = env.sender_address_2 # deploy from
+#SENDER_SECRET = env.sender_secret_2 # deploy from
 
 # Connect to a local Ethereum node or a remote one
-#w3 = Web3(HTTPProvider('http://localhost:8545'))
-#w3 = Web3(HTTPProvider(f'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'))
-#w3 = Web3(HTTPProvider(f'https://goerli.infura.io/v3/'))
-W3 = Web3(HTTPProvider(f'https://rpc.pulsechain.com'))
+local_test = 'http://localhost:8545'
+eth_main = f'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'
+eth_test = f'https://goerli.infura.io/v3/'
+pc_main = f'https://rpc.pulsechain.com'
+eth_main_cid=1
+pc_main_cid=369
+#NET_URL = eth_main
+#CHAIN_ID = eth_main_cid
+NET_URL = pc_main
+CHAIN_ID = pc_main_cid
+
+print(f'DEPLOYING to: {NET_URL}')
+W3 = Web3(HTTPProvider(NET_URL))
+
+abi_file = "../contracts/BalancerFLR.json"
+bin_file = "../contracts/BalancerFLR.bin"
+
+print('reading abi file... '+abi_file)
+with open(abi_file, "r") as file:
+    CONTR_ABI = file.read()
+
+print('reading bytecode file... '+bin_file)
+with open(bin_file, "r") as file:
+    CONTR_BYTES = file.read()
+    CONTR_BYTES = '0x'+CONTR_BYTES
+
+def estimate_gas():
+    # Replace with your contract's ABI and bytecode
+    contract_abi = CONTR_ABI
+    contract_bytecode = CONTR_BYTES
+    
+    # Replace with your wallet's private key
+    private_key = SENDER_SECRET
+
+    # Create a web3.py contract object
+    contract = W3.eth.contract(abi=contract_abi, bytecode=contract_bytecode)
+
+    # Set the sender's address from the private key
+    sender_address = W3.eth.account.from_key(private_key).address
+
+    # Estimate gas for contract deployment
+    gas_estimate = contract.constructor().estimateGas({'from': sender_address})
+
+    print(f"Estimated gas cost: {gas_estimate}")
+
+    # Optionally, you can also estimate the gas price (in Gwei) using a gas price strategy
+    # Replace 'fast' with other strategies like 'medium' or 'slow' as needed
+#    gas_price = W3.eth.generateGasPrice(fast_gas_price_strategy)
+#
+#    print(f"Estimated gas price (Gwei): {W3.fromWei(gas_price, 'gwei')}")
+    
+    proc = input('\n procced? [y/n]\n > ')
+    return proc == 'y'
 
 # note: params checked/set in priority order; 'def|max_params' uses 'mpf_ratio'
 #   if all params == False, falls back to 'min_params=True' (ie. just use 'gas_limit')
 def get_gas_params_lst(min_params=False, max_params=False, def_params=True, mpf_ratio=1.0):
+    global NET_URL
+    
     # Estimate the gas cost for the transaction
     #gas_estimate = buy_tx.estimate_gas()
-    gas_limit = 20_000_000 # max gas units to use for tx (required)
-    gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
-    max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
-    max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-    #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+    if NET_URL == pc_main:
+        gas_limit = 20_000_000 # max gas units to use for tx (required)
+        gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
+        max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
+        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+    
+    if NET_URL == eth_main:
+        # 102823
+        #   -1327: eth main -> FAIELD - $9 and ran out of gass
+        #gas_limit = 60_000 # max gas units to use for tx (required)
+        gas_limit = 2_000_000 # max gas units to use for tx (required)
+        gas_price = W3.to_wei('13', 'gwei') # price to pay for each unit of gas (optional?)
+        max_fee = W3.to_wei('18', 'gwei') # max fee per gas unit to pay (optional?)
+        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
 
     if min_params:
         return [{'gas':gas_limit}]
@@ -32,13 +98,13 @@ def get_gas_params_lst(min_params=False, max_params=False, def_params=True, mpf_
     else:
         return [{'gas':gas_limit}]
         
+proceed = estimate_gas()
+assert proceed, "\ndeployment canceled after gas estimate\n"
 
-abi_file = "../contracts/BalancerFLR.json"
 print('reading abi file... '+abi_file)
 with open(abi_file, "r") as file:
     CONTR_ABI = file.read()
-    
-bin_file = "../contracts/BalancerFLR.bin"
+
 print('reading bytecode file... '+bin_file)
 with open(bin_file, "r") as file:
     CONTR_BYTES = file.read()
@@ -51,11 +117,7 @@ balancer_flr = W3.eth.contract(
 
 print('calculating gas...')
 tx_params = {
-    #'chainId': 1,  # ethereum Mainnet
-    #'chainId': 5,  # goerli ethereum testnet
-    #'gasPrice': w3.toWei('20', 'gwei'),
-    
-    'chainId': 369,  # pulsechain Mainnet
+    'chainId': CHAIN_ID,
     'nonce': W3.eth.getTransactionCount(SENDER_ADDRESS),
 }
 lst_gas_params = get_gas_params_lst(min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
