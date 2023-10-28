@@ -56,7 +56,6 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
         // uint[] memory amntOut_v2;
         uint256 amntOut;
         
-        
         // check for uniswap v3 integration (requires bytes memory 'path' param)
         if (router_0 == uniswapRouterV3) {
             // convert path to bytes memory
@@ -64,8 +63,7 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
             amntOut = swap_v3(router_0, bytes_path, amntIn_0, 1);
         } else {
             // found uniswap v2 protocol integration
-            uint[] memory amntOut_v2 = swap_v2(router_0, path_0, amntIn_0, 1);
-            amntOut = uint256(amntOut_v2[1]); // idx 0=amntIn, 1=amntOut
+            amntOut = swap_v2(router_0, path_0, amntIn_0, 1);
         }
         
         // check for uniswap v3 integration (requires bytes memory 'path' param)
@@ -75,8 +73,7 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
             amntOut = swap_v3(router_1, bytes_path, amntOut, amntOutMin_1);
         } else {
             // found uniswap v2 protocol integration
-            uint[] memory amntOut_v2 = swap_v2(router_1, path_1, amntOut, amntOutMin_1);
-            amntOut = uint256(amntOut_v2[1]); // idx 0=amntIn, 1=amntOut
+            amntOut = swap_v2(router_1, path_1, amntOut, amntOutMin_1);
         }
     }
     
@@ -97,7 +94,7 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
         return amntOut;
     }
     
-    function swap_v2(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint[] memory) {
+    function swap_v2(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
         // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2
         // IUniswapV2 constant swapRouter = IUniswapV2(router);
         IUniswapV2 swapRouter = IUniswapV2(router);
@@ -110,7 +107,7 @@ contract BalancerFlashLoanRecipient is IFlashLoanRecipient {
                         address(this),
                         deadline
                     );
-        return amntOut;
+        return uint256(amntOut[1]); // idx 0=amntIn, 1=amntOut
     }
     
     function addressesToBytes(address[] memory addresses) private pure returns (bytes memory) {
