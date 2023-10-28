@@ -3,12 +3,7 @@ from web3.middleware import construct_sign_and_send_raw_middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy
 import env
 
-print('getting keys and intializing web3...')
-SENDER_ADDRESS = env.sender_address_1 # deploy from
-SENDER_SECRET = env.sender_secret_1 # deploy from
-#SENDER_ADDRESS = env.sender_address_2 # deploy from
-#SENDER_SECRET = env.sender_secret_2 # deploy from
-
+print('getting keys and intializing web3 settings...')
 # Connect to a local Ethereum node or a remote one
 local_test = 'http://localhost:8545'
 eth_main = f'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'
@@ -16,10 +11,15 @@ eth_test = f'https://goerli.infura.io/v3/'
 pc_main = f'https://rpc.pulsechain.com'
 eth_main_cid=1
 pc_main_cid=369
-#NET_URL = eth_main
-#CHAIN_ID = eth_main_cid
-NET_URL = pc_main
-CHAIN_ID = pc_main_cid
+
+## SETTINGS ##
+SENDER_ADDRESS = env.sender_address_3 # deploy from
+SENDER_SECRET = env.sender_secret_3 # deploy from
+
+NET_URL = eth_main
+CHAIN_ID = eth_main_cid
+#NET_URL = pc_main
+#CHAIN_ID = pc_main_cid
 
 print(f'DEPLOYING to: {NET_URL}')
 W3 = Web3(HTTPProvider(NET_URL))
@@ -57,9 +57,8 @@ def estimate_gas():
 
     # Optionally, you can also estimate the gas price (in Gwei) using a gas price strategy
     # Replace 'fast' with other strategies like 'medium' or 'slow' as needed
-#    gas_price = W3.eth.generateGasPrice(fast_gas_price_strategy)
-#
-#    print(f"Estimated gas price (Gwei): {W3.fromWei(gas_price, 'gwei')}")
+    #gas_price = W3.eth.generateGasPrice(fast_gas_price_strategy)
+    #print(f"Estimated gas price (Gwei): {W3.fromWei(gas_price, 'gwei')}")
     
     proc = input('\n procced? [y/n]\n > ')
     return proc == 'y'
@@ -79,9 +78,15 @@ def get_gas_params_lst(min_params=False, max_params=False, def_params=True, mpf_
         #max_priority_fee = W3.to_wei('0.000000003', 'ether')
     
     if NET_URL == eth_main:
-        # 102823
+        # 102823 attempt #1
         #   -1327: eth main -> FAIELD - $9 and ran out of gass
         #gas_limit = 60_000 # max gas units to use for tx (required)
+        
+        # 102823 attempt #2 (success results)
+        #   Transaction Fee: 0.023065003454369288 ETH ($41.05)
+        #   Gas Price: 13.810783879 Gwei (0.000000013810783879 ETH)
+        #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
+        #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
         gas_limit = 2_000_000 # max gas units to use for tx (required)
         gas_price = W3.to_wei('13', 'gwei') # price to pay for each unit of gas (optional?)
         max_fee = W3.to_wei('18', 'gwei') # max fee per gas unit to pay (optional?)

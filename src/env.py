@@ -61,6 +61,8 @@ sender_address_1 = os.environ['PUBLIC_KEY_4']
 sender_secret_1 = os.environ['PRIVATE_KEY_4']
 sender_address_2 = os.environ['PUBLIC_KEY_5']
 sender_secret_2 = os.environ['PRIVATE_KEY_5']
+sender_address_3 = os.environ['PUBLIC_KEY_6']
+sender_secret_3 = os.environ['PRIVATE_KEY_6']
 
 #============================================================================#
 ## s3 & receipt constants
