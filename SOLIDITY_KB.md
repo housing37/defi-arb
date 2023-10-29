@@ -115,7 +115,9 @@ In Solidity, there are various function modifiers and decorators that can change
    - `pure`: The function does not modify the state and does not read data.
    - (Default): If none of the above are specified, the function is considered "non-payable" and can modify the state.
 
-3. `payable`: Allows a function to receive Ether as part of the function call.
+3. `payable`: Allows a function to receive Ether as part of the function call;
+
+3b.`payable(address)`: an Ethereum address that can receive and send Ether.
 
 4. `returns`: Specifies the return data types of a function.
 

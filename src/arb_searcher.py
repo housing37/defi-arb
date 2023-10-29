@@ -51,6 +51,7 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
     global NET_CALL_CNT
     if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ [{get_time_now()}]', cStrDivider, sep='\n')
     dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
+    #dict_all_symbs = scrape_dex_recurs_1(t_addr, t_symb, chain_id, {}, plog=False)
 
     print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
     print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...')
@@ -59,6 +60,144 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
     print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
     return dict(dict_all_symbs)
 
+# house_102923: new algorithm attempt (not working at all)
+# scrape dexscreener recursively
+def scrape_dex_recurs_1(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
+    NET_CALL_CNT += 1
+
+    # API calls are limited to 300 requests per minute
+    url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
+    time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
+    data = exe_dexscreener_request(url)
+    if plog: print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
+    else: print('.', end=' ', flush=True)
+    
+    for k,v in enumerate(data['pairs']):
+        pair_addr = v['pairAddress']
+        liquid = -1.0 if 'liquidity' not in v else v['liquidity']['usd']
+        _chain_id = v['chainId']
+        dex_id = v['dexId']
+        labels = ['-1'] if 'labels' not in v else v['labels']
+        price_usd = '-1.0' if 'priceUsd' not in v else v['priceUsd']
+        price_nat = '-1.0' if 'priceNative' not in v else v['priceNative']
+        base_tok_addr = v['baseToken']['address']
+        base_tok_symb = v['baseToken']['symbol']
+        base_tok_name = v['baseToken']['name']
+        quote_tok_addr = v['quoteToken']['address']
+        quote_tok_symb = v['quoteToken']['symbol']
+        quote_tok_name = v['quoteToken']['name']
+        
+#        base_tok_addr = v['baseToken']['address'] if v['baseToken']['address'] > 0 else 'nil_str'
+#        base_tok_addr = 'nil_str'
+        if len(base_tok_addr) < 1: base_tok_addr = 'nil_str'
+        if len(base_tok_symb) < 1: base_tok_symb = 'nil_str'
+        if len(base_tok_name) < 1: base_tok_name = 'nil_str'
+        if len(quote_tok_addr) < 1: quote_tok_addr = 'nil_str'
+        if len(quote_tok_symb) < 1: quote_tok_symb = 'nil_str'
+        if len(quote_tok_name) < 1: quote_tok_name = 'nil_str'
+        
+#        if price_usd == '-1.0':
+#            import pprint
+#            pp = pprint.PrettyPrinter(indent=4)
+#            pp.pprint(v)
+#            print('exiting...')
+#            exit(1)
+#        print(f'checking liquidity: {liquid}')
+        if liquid < 0:
+            continue
+        
+#        if addr not in DICT_ALL_SYMBS:
+        
+        if _chain_id == chain_id:
+            # recursive call to 'scrape_dex_recurs', until all QTs are found as BTs
+            if tok_addr == base_tok_addr:
+                addr = v['baseToken']['address']
+                symb = v['baseToken']['symbol']
+                if addr not in DICT_ALL_SYMBS:
+                    DICT_ALL_SYMBS[addr] = [0, symb, v['chainId'], v['dexId'], labels, [[pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd]]]
+                else:
+                    DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
+                    DICT_ALL_SYMBS[addr][0] = DICT_ALL_SYMBS[addr][0] + 1
+                    
+                    lst_symbs = DICT_ALL_SYMBS[addr] # legacy support
+                    
+                    # check for arb opp between OG pair addr and this new pair addr
+                    dexid = DICT_ALL_SYMBS[addr][3]
+                    lst_addr_info = DICT_ALL_SYMBS[addr]
+                    lst_q = lst_addr_info[-1]
+#                    found_qt = False
+#                    for q in lst_q:
+#                        q_addr = q[2]
+#                        if q_addr == addr_quote:
+#                            found_qt = True
+
+                    # set conditional for printing quote
+                    #   usd price errors and low liquidity
+                    #   NOTE: but don't want to ignore them for recursive calls
+                    #    this logic allows all cases to be stored & recursively assessed
+                    #    but they won't be printed and have their quote list updated
+                    #   HENCE, skip_quote & non-hi_liq cases will indeed be printed
+                    #    when they are compared against non-skip_quote & hi_liq cases
+                    skip_quote = price_usd == '-1.0' or liquid < USD_LIQ_REQ or dexid == dex_id
+                    hi_liq = liquid > float(price_usd)
+                    
+                    # NOTE: hi_liq still lets the low liq pairs get stored
+                    #   but low liq pairs not printed & have no quote list updates
+#                    if not found_qt and not skip_quote and hi_liq:
+                    if hi_liq and not skip_quote:
+                        print(' | ')
+                        #quote = lst_quotes[-1]
+                        # if this BT symbol is not stored already
+                        #   and the price is diffrent than whats stored
+                        #   and price is not set to -1
+                        #if symb != quote[1] and float(quote[-1]) != float(price_usd) and float(quote[-1]) != -1:
+                        
+                        quote = lst_q[0] # original BT quote info array
+                        if float(quote[-1]) != float(price_usd):
+                            print(' || ')
+
+                            # check for native price diff and quoteTokens match
+                            diff_nat = diff_perc_nat = log_diff_nat = -1
+#                            if addr_quote == quote[2]:
+#                                diff_nat = float(price_nat) - float(quote[-2])
+#                                diff_perc_nat = abs(1 - (float(quote[-2]) / float(price_nat))) * 100
+#                                log_diff_nat = f'{diff_nat:,.4f} {quote_tok_symb} _ {diff_perc_nat:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}'
+                                
+                            diff_nat = float(price_nat) - float(quote[-2])
+                            diff_perc_nat = abs(1 - (float(quote[-2]) / float(price_nat))) * 100
+                            log_diff_nat = f'{diff_nat:,.4f} {quote_tok_symb} _ {diff_perc_nat:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}'
+                            
+                            # check for usd price diff than what we've logged so far
+                            diff_usd = float(price_usd) - float(quote[-1])
+                            diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
+                            usd_diff_ok = diff_usd >= USD_DIFF or diff_usd <= -USD_DIFF
+                            nat_diff_ok = diff_nat
+                            if usd_diff_ok:
+                                print(' .. .. .. ')
+                                ARB_OPP_CNT += 1
+                                print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
+                                print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff_usd:,.2f} _ {diff_perc:,.2f}%')
+                                print(f'  base_tok | {lst_symbs[1]}: {addr} | {lst_symbs[2:5]}')
+                                print(f'  quote_tok | {quote[1]}: {quote[2]} _ price: ${float(quote[-1]):,.2f} ({float(quote[-2])} {quote[1]})')
+                                print(f'  pair_addr: {quote[0]}')
+                                print(f'  LIQUIDITY: ${quote[3]:,.2f}')
+                                print('\n  cross-dex ...')
+                                print(f'   base_tok | {base_tok_symb}: {base_tok_addr} | {_chain_id}, {dex_id}, {labels}')
+                                print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f} ({float(price_nat)} {quote_tok_symb})')
+                                print(f'   pair_addr: {pair_addr}')
+                                print(f'   LIQUIDITY: ${liquid:,.2f}')
+                                print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}')
+                                print(f'  PRICE-DIFF-NAT = {log_diff_nat}\n')
+
+#                        DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
+                        #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
+            else: # tok_addr == quote_tok_addr
+#                scrape_dex_recurs_1(base_tok_addr, base_tok_symb, chain_id, DICT_ALL_SYMBS, plog=plog)
+                scrape_dex_recurs_1(quote_tok_addr, quote_tok_symb, chain_id, DICT_ALL_SYMBS, plog=plog)
+                
+    return DICT_ALL_SYMBS
+                
 # scrape dexscreener recursively
 def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
     global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT

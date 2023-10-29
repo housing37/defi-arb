@@ -37,6 +37,8 @@
     DEX: verse (found in .py logs)
         ref: https://docs.swapverse.exchange/ & https://twitter.com/Swapverse_)
      note: can't find discord or list of contract addresses
+     addr: https://etherscan.io/token/0xeacadc656c9394fb09af25aebc0897fdffe484a1#code
+        found through .py log pairs (102923)
 
     DEX: uniswap v3 (found in .py logs)
      addr: 0xE592427A0AEce92De3Edee1F18E0157C05861564 // SwapRouter
