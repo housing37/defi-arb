@@ -16,16 +16,29 @@ pc_main_cid=369
 SENDER_ADDRESS = env.sender_address_3 # deploy from
 SENDER_SECRET = env.sender_secret_3 # deploy from
 
-NET_URL = eth_main
+RPC_URL = eth_main
 CHAIN_ID = eth_main_cid
-#NET_URL = pc_main
+#RPC_URL = pc_main
 #CHAIN_ID = pc_main_cid
 
-print(f'DEPLOYING to: {NET_URL}')
-W3 = Web3(HTTPProvider(NET_URL))
+print(f'\nDEPLOYING to: {RPC_URL} _ cid: {CHAIN_ID}\n from sender: {SENDER_ADDRESS}')
+assert input('\n procced? [y/n]\n > ') == 'y', "aborted...\n"
 
+W3 = Web3(HTTPProvider(RPC_URL))
 abi_file = "../contracts/BalancerFLR.json"
 bin_file = "../contracts/BalancerFLR.bin"
+
+# ethereum main net
+GAS_LIMIT = 3_000_000# max gas units to use for tx (required)
+GAS_PRICE = W3.to_wei('10', 'gwei') # price to pay for each unit of gas (optional?)
+MAX_FEE = W3.to_wei('14', 'gwei') # max fee per gas unit to pay (optional?)
+MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * 1.0) # 1.0=mpf_ratio # max fee per gas unit to pay for priority (faster) (optional)
+
+# pulsechain main net
+#GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
+#GAS_PRICE = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional?)
+#MAX_FEE = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional?)
+#MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
 
 print('reading abi file... '+abi_file)
 with open(abi_file, "r") as file:
@@ -65,33 +78,15 @@ def estimate_gas():
 
 # note: params checked/set in priority order; 'def|max_params' uses 'mpf_ratio'
 #   if all params == False, falls back to 'min_params=True' (ie. just use 'gas_limit')
-def get_gas_params_lst(min_params=False, max_params=False, def_params=True, mpf_ratio=1.0):
-    global NET_URL
-    
+def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=True, mpf_ratio=1.0):
     # Estimate the gas cost for the transaction
     #gas_estimate = buy_tx.estimate_gas()
-    if NET_URL == pc_main:
-        gas_limit = 20_000_000 # max gas units to use for tx (required)
-        gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
-        max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
-        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
-    
-    if NET_URL == eth_main:
-        # 102823 attempt #1
-        #   -1327: eth main -> FAIELD - $9 and ran out of gass
-        #gas_limit = 60_000 # max gas units to use for tx (required)
-        
-        # 102823 attempt #2 (success results)
-        #   Transaction Fee: 0.023065003454369288 ETH ($41.05)
-        #   Gas Price: 13.810783879 Gwei (0.000000013810783879 ETH)
-        #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
-        #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
-        gas_limit = 2_000_000 # max gas units to use for tx (required)
-        gas_price = W3.to_wei('13', 'gwei') # price to pay for each unit of gas (optional?)
-        max_fee = W3.to_wei('18', 'gwei') # max fee per gas unit to pay (optional?)
-        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+    gas_limit = GAS_LIMIT # max gas units to use for tx (required)
+    gas_price = GAS_PRICE # price to pay for each unit of gas (optional?)
+    max_fee = MAX_FEE # max fee per gas unit to pay (optional?)
+    max_prior_fee = MAX_PRIOR_FEE # max fee per gas unit to pay for priority (faster) (optional)
+    #max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+    #max_priority_fee = W3.to_wei('0.000000003', 'ether')
 
     if min_params:
         return [{'gas':gas_limit}]
@@ -125,7 +120,7 @@ tx_params = {
     'chainId': CHAIN_ID,
     'nonce': W3.eth.getTransactionCount(SENDER_ADDRESS),
 }
-lst_gas_params = get_gas_params_lst(min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
+lst_gas_params = get_gas_params_lst(RPC_URL, min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
 for d in lst_gas_params: tx_params.update(d) # append gas params
 
 print('building tx...')
