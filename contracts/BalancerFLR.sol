@@ -6,7 +6,7 @@ import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 import {ISwapRouter} from "https://github.com/Uniswap/v3-periphery/blob/v1.2.0/contracts/interfaces/ISwapRouter.sol";
 
-// house_102423 (not tested)
+// house_102823 (testing...)
 interface IUniswapV2 {
     function swapExactTokensForTokens(
         uint amountIn,
@@ -30,7 +30,12 @@ contract BalancerFLR is IFlashLoanRecipient {
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     address public _owner;
     
+    event logX(address indexed contr, address sender, string message);
+    event logRFL(address indexed contr, address sender, string message);
+    event logMFL(address indexed contr, address sender, string message);
+
     constructor() {
+        emit logX(address(this), msg.sender, "logX 0");
         _owner = msg.sender;
     }
 
@@ -39,8 +44,11 @@ contract BalancerFLR is IFlashLoanRecipient {
         uint256[] memory amounts,
         bytes memory userData
     ) external {
+        emit logMFL(address(this), msg.sender, "logMFL 0");
         require(msg.sender == _owner, "loan to owner only");
+        emit logMFL(address(this), msg.sender, "logMFL 1");
         vault.flashLoan(this, tokens, amounts, userData);
+        emit logMFL(address(this), msg.sender, "logMFL -1");
     }
     
     function receiveFlashLoan(
@@ -49,9 +57,13 @@ contract BalancerFLR is IFlashLoanRecipient {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
+        emit logRFL(address(this), msg.sender, "logRFL 0");
         require(msg.sender == address(vault), "loan from vault only");
+        
+        emit logRFL(address(this), msg.sender, "logRFL 1");
         (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
         
+        emit logRFL(address(this), msg.sender, "logRFL 2");
         // approve for payback when execution finished
         //  init testing: return immediately (payback right away; req funds in this contract)
         uint256 amountOwed = amounts[0] + feeAmounts[0];
@@ -63,23 +75,28 @@ contract BalancerFLR is IFlashLoanRecipient {
         
         // check for uniswap v3 integration (requires bytes memory 'path' param)
         if (router_0 == uniswapRouterV3) {
+            emit logRFL(address(this), msg.sender, "logRFL 3a");
             // convert path to bytes memory
             bytes memory bytes_path = addressesToBytes(path_0);
             amntOut = swap_v3(router_0, bytes_path, amntIn_0, 1);
         } else {
+            emit logRFL(address(this), msg.sender, "logRFL 3b");
             // found uniswap v2 protocol integration
             amntOut = swap_v2(router_0, path_0, amntIn_0, 1);
         }
         
         // check for uniswap v3 integration (requires bytes memory 'path' param)
         if (router_1 == uniswapRouterV3) {
+            emit logRFL(address(this), msg.sender, "logRFL 4a");
             // convert path to bytes memory
             bytes memory bytes_path = addressesToBytes(path_1);
             amntOut = swap_v3(router_1, bytes_path, amntOut, amntOutMin_1);
         } else {
+            emit logRFL(address(this), msg.sender, "logRFL 4b");
             // found uniswap v2 protocol integration
             amntOut = swap_v2(router_1, path_1, amntOut, amntOutMin_1);
         }
+        emit logRFL(address(this), msg.sender, "logRFL -1");
     }
     
     modifier onlyOwner() {
@@ -111,11 +128,16 @@ contract BalancerFLR is IFlashLoanRecipient {
     }
     
     function swap_v3(address router, bytes memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
+        emit logRFL(address(this), msg.sender, "logRFL 5a");
+        
         // v3: uniswap v3
-        // ISwapRouter constant swapRouter = ISwapRouter(router);
         ISwapRouter swapRouter = ISwapRouter(router);
+        
+        emit logRFL(address(this), msg.sender, "logRFL 5b");
         IERC20(address(this)).approve(address(swapRouter), amntIn);
         uint deadline = block.timestamp + 300;
+        
+        emit logRFL(address(this), msg.sender, "logRFL 5c");
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
             recipient: address(this),
@@ -123,16 +145,22 @@ contract BalancerFLR is IFlashLoanRecipient {
             amountIn: amntIn,
             amountOutMinimum: amntOutMin
         });
+        
+        emit logRFL(address(this), msg.sender, "logRFL 5d");
         uint256 amntOut = swapRouter.exactInput(params);
         return amntOut;
     }
     
     function swap_v2(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
+        emit logRFL(address(this), msg.sender, "logRFL 6a");
         // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2
-        // IUniswapV2 constant swapRouter = IUniswapV2(router);
         IUniswapV2 swapRouter = IUniswapV2(router);
+        
+        emit logRFL(address(this), msg.sender, "logRFL 6b");
         IERC20(address(this)).approve(address(swapRouter), amntIn);
         uint deadline = block.timestamp + 300;
+        
+        emit logRFL(address(this), msg.sender, "logRFL 6c");
         uint[] memory amntOut = swapRouter.swapExactTokensForTokens(
                         amntIn,
                         amntOutMin,
@@ -140,12 +168,15 @@ contract BalancerFLR is IFlashLoanRecipient {
                         address(this),
                         deadline
                     );
+
+        emit logRFL(address(this), msg.sender, "logRFL 6d");
         return uint256(amntOut[1]); // idx 0=amntIn, 1=amntOut
     }
     
-    function addressesToBytes(address[] memory addresses) private pure returns (bytes memory) {
+    function addressesToBytes(address[] memory addresses) private returns (bytes memory) {
         bytes memory result = new bytes(addresses.length * 20); // Each address is 20 bytes long
 
+        emit logX(address(this), msg.sender, "logX 1a");
         for (uint256 i = 0; i < addresses.length; i++) {
             // Convert each address to bytes and copy it into the result
             bytes20 addressBytes = bytes20(addresses[i]);
@@ -153,7 +184,8 @@ contract BalancerFLR is IFlashLoanRecipient {
                 result[i * 20 + j] = addressBytes[j];
             }
         }
-
+        
+        emit logX(address(this), msg.sender, "logX 1b");
         return result;
     }
 }
