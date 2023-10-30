@@ -401,7 +401,7 @@ def go_main():
     for v in lst_d:
         d0 = v[0]
         print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())} ...')
-        [print(k, d0[k][0:5]) for k in d0.keys()]
+        #[print(k, d0[k][0:5]) for k in d0.keys()]
         print(f'{v[3]} _ start from token: {v[2]} _ unique tokens found: {len(v[0].keys())}\n')
         print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
 
