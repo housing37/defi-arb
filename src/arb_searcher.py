@@ -31,6 +31,11 @@ RUN_TIME_START = None
 USD_DIFF = 100
 USD_LIQ_REQ = 1000
 
+# for net requests:
+#   0.1 = ~200/min | 0.05 = ~240/min (stalls sometimes)
+#   0.25 (doesn't seem to stall)
+SLEEP_TIME = 0.25
+
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
@@ -63,12 +68,12 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
 # house_102923: new algorithm attempt (not working at all)
 # scrape dexscreener recursively
 def scrape_dex_recurs_1(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT, SLEEP_TIME
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
-    time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
+    time.sleep(SLEEP_TIME) # 0.1 = ~200/min | 0.05 = ~240/min
     data = exe_dexscreener_request(url)
     if plog: print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
     else: print('.', end=' ', flush=True)
@@ -200,12 +205,12 @@ def scrape_dex_recurs_1(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=Tr
                 
 # scrape dexscreener recursively
 def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True):
-    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT
+    global NET_CALL_CNT, RUN_TIME_START, USD_DIFF, ARB_OPP_CNT, SLEEP_TIME
     NET_CALL_CNT += 1
 
     # API calls are limited to 300 requests per minute
     url = f"https://api.dexscreener.io/latest/dex/tokens/{tok_addr}"
-    time.sleep(0.05) # 0.1 = ~200/min | 0.05 = ~240/min
+    time.sleep(SLEEP_TIME) # 0.1 = ~200/min | 0.05 = ~240/min
     data = exe_dexscreener_request(url)
     if plog: print('', cStrDivider, f'[{NET_CALL_CNT}] NET_CALL_CNT _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]', f'   {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs', cStrDivider, sep='\n')
     else: print('.', end=' ', flush=True)
@@ -265,25 +270,33 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         if addr_quote == quote[2]:
                             diff_nat = float(price_nat) - float(quote[-2])
                             diff_perc_nat = abs(1 - (float(quote[-2]) / float(price_nat))) * 100
-                            log_diff_nat = f'{diff_nat:,.4f} {quote_tok_symb} _ {diff_perc_nat:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}'
+                            log_diff_nat = f'{diff_nat:,.4f} {quote_tok_symb} _ {diff_perc_nat:,.2f}% diff'
                         
                         # check for usd price diff than what we've logged so far
                         diff_usd = float(price_usd) - float(quote[-1])
                         diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
                         usd_diff_ok = diff_usd >= USD_DIFF or diff_usd <= -USD_DIFF
-                        nat_diff_ok = diff_nat
                         
                         # exclude arb from same dex/ver combo
                         dex_vers_ok = dex_id != lst_symbs[3] and labels[0] != lst_symbs[4][0]
 
-                        # exclude tokens: [wstETH]
-                        lst_addr_ignore = ['0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'] # dexscreener misquote
+                        # exclude tokens: [wstETH, graviAURA]
+                        lst_addr_ignore = ['0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', '0xBA485b556399123261a5F9c95d413B4f93107407']
+                            # dexscreener misquotes / liquidity issues
                         base_addr_ok = base_tok_addr not in lst_addr_ignore
+                        quote_addr_ok = quote_tok_addr not in lst_addr_ignore and quote[2] not in lst_addr_ignore
                         
                         # exclude dex 'balancer'
                         #dex_ok = not (dex_id == 'balancer' or lst_symbs[3] == 'balancer')
-
-                        if dex_vers_ok and base_addr_ok and usd_diff_ok:
+                        
+                        # check for usd price diff based on max liquidity
+                        diff_usd_max_liq = diff_perc_max_liq = log_diff_liq = -1
+                        if liquid < float(price_usd):
+                            diff_usd_max_liq = liquid - quote[3]
+                            diff_perc_max_liq = abs(1 - (float(quote[3]) / liquid)) * 100
+                            log_diff_liq = f'${diff_usd_max_liq:,.2f} _ {diff_perc_max_liq:,.2f}% diff'
+                        
+                        if dex_vers_ok and base_addr_ok and quote_addr_ok and usd_diff_ok:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
                             print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff_usd:,.2f} _ {diff_perc:,.2f}%')
@@ -296,8 +309,10 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f} ({float(price_nat)} {quote_tok_symb})')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
-                            print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}')
-                            print(f'  PRICE-DIFF-NAT = {log_diff_nat}\n')
+                            print(f'\n  PRICE-DIFF-NAT = {log_diff_nat}')
+                            print(f'  PRICE-DIFF-USD = {log_diff_liq} (max liquidity based price)')
+                            print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}\n')
+                            
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
