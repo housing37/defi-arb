@@ -249,8 +249,8 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                 #   HENCE, skip_quote & non-hi_liq cases will indeed be printed
                 #    when they are compared against non-skip_quote & hi_liq cases
                 skip_quote = price_usd == '-1.0' or liquid < USD_LIQ_REQ
-                hi_liq = liquid > float(price_usd)
-                
+                hi_liq = liquid > float(price_usd) or True # or True (disabled)
+
                 # NOTE: hi_liq still lets the low liq pairs get stored
                 #   but low liq pairs not printed & have no quote list updates
                 if hi_liq and not skip_quote:
@@ -272,7 +272,18 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
                         usd_diff_ok = diff_usd >= USD_DIFF or diff_usd <= -USD_DIFF
                         nat_diff_ok = diff_nat
-                        if usd_diff_ok:
+                        
+                        # exclude arb from same dex/ver combo
+                        dex_vers_ok = dex_id != lst_symbs[3] and labels[0] != lst_symbs[4][0]
+
+                        # exclude tokens: [wstETH]
+                        lst_addr_ignore = ['0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'] # dexscreener misquote
+                        base_addr_ok = base_tok_addr not in lst_addr_ignore
+                        
+                        # exclude dex 'balancer'
+                        #dex_ok = not (dex_id == 'balancer' or lst_symbs[3] == 'balancer')
+
+                        if dex_vers_ok and base_addr_ok and usd_diff_ok:
                             ARB_OPP_CNT += 1
                             print(f'\n[r{NET_CALL_CNT}] _ T | {tok_symb}: {tok_addr} returned {len(data["pairs"])} pairs _ start: [{RUN_TIME_START}] _ now: [{get_time_now()}]')
                             print(f'FOUND arb-opp #{ARB_OPP_CNT} ... PRICE-DIFF = ${diff_usd:,.2f} _ {diff_perc:,.2f}%')
