@@ -11,6 +11,7 @@ cStrDivider_1 = '#--------------------------------------------------------------
 import sys, os, time, traceback
 from datetime import datetime
 from web3 import Account, Web3, HTTPProvider
+import web3
 from ethereum.abi import encode_abi # pip install ethereum
 import env
 #import inspect # this_funcname = inspect.stack()[0].function
@@ -46,14 +47,16 @@ ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
 SENDER_ADDRESS = env.sender_address_3 # deploy from
 SENDER_SECRET = env.sender_secret_3 # deploy from
 
-CONTR_ARB_ADDR = "0x59012124c297757639e4ab9b9e875ec80a5c51da" # deployed eth main 102823_1550
+#CONTR_ARB_ADDR = "0x59012124c297757639e4ab9b9e875ec80a5c51da" # deployed eth main 102823_1550
+CONTR_ARB_ADDR = "0x48af7d501bca526171b322ac2d8387a8cf085850" # deployed eth main 102823_2140
+
 RPC_URL = eth_main
 CHAIN_ID = eth_main_cid
 #CONTR_ARB_ADDR = "0x892c6304870dbCeC69697D41298E9543B055F476" # deployed pc main 102823
 #RPC_URL = pc_main
 #CHAIN_ID = pc_main_cid
 
-print(f'reading contract abi file: {CONTR_ARB_ADDR}...')
+print(f'reading abi file for CONTR_ARB_ADDR: {CONTR_ARB_ADDR}...')
 with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
 
 print(f'finalizing arb settings...')
@@ -61,22 +64,36 @@ ROUTER_0 = ROUTER_UNISWAP_V3
 ROUTER_1 = ROUTER_UNISWAP_V3
 
 ADDR_IN_0 = ADDR_WETH
-ADDR_OUT_MIN_0 = ADDR_BBTC
-ADDR_IN_1 = ADDR_BBTC
-ADDR_OUT_MIN_1 = ADDR_WBTC
+ADDR_OUT_MIN_0 = ADDR_WBTC
+ADDR_IN_1 = ADDR_WBTC
+ADDR_OUT_MIN_1 = ADDR_USDC
 
-AMNT_IN_0 = '18.9422'
-AMNT_OUT_MIN_1 = '0.9996'
+AMNT_IN_0 = '19.1743'
+AMNT_OUT_MIN_1 = '34005.5729'
 LST_ARB = [
         [ROUTER_0, ROUTER_1],
         [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
         [AMNT_IN_0, AMNT_OUT_MIN_1]
     ]
 
-print('connecting to pulsechain ... (getting account for secret)')
+print(f'\nCONNECTING to: {RPC_URL} _ cid: {CHAIN_ID}\n from sender account: {SENDER_ADDRESS}')
 W3 = Web3(Web3.HTTPProvider(RPC_URL))
 ACCOUNT = Account.from_key(SENDER_SECRET) # default
+CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
 CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
+
+print('calc gas settings...')
+# ethereum main net
+GAS_LIMIT = 2_000_000# max gas units to use for tx (required)
+GAS_PRICE = W3.to_wei('9', 'gwei') # price to pay for each unit of gas (optional?)
+MAX_FEE = W3.to_wei('14', 'gwei') # max fee per gas unit to pay (optional?)
+MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * 1.0) # 1.0=mpf_ratio # max fee per gas unit to pay for priority (faster) (optional)
+
+# pulsechain main net
+#GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
+#GAS_PRICE = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional?)
+#MAX_FEE = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional?)
+#MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -140,7 +157,7 @@ def go_loan():
     #    allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
     #print(cStrDivider_1, 'DONE - validate allowance', sep='\n')
     
-    print('setting arb tx params...')
+    print(f'setting arb tx params... [{get_time_now()}]')
     addr_arb_contr = CONTR_ARB_ADDR
     
     router_0 = LST_ARB[0][0]
@@ -168,24 +185,30 @@ def go_loan():
         'chainId':CHAIN_ID, # required
         'from': ACCOUNT.address,
         'to': addr_arb_contr,
-        #'gas': 2000000,  # Adjust gas limit as needed
-        #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
-        "gas": 20_000_000,  # Adjust the gas limit as needed
         'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
         'data': CONTR_ARB.encodeABI(fn_name='makeFlashLoan', args=[lst_tok_addr, lst_tok_amnt, encoded_data]),
-        
     }
-    print('calculating gas...')
+    
+    print('setting gas params...')
     lst_gas_params = get_gas_params_lst(RPC_URL, min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
     for d in lst_gas_params: tx_params.update(d) # append gas params
 
-    #gas_estimate = CONTR_ARB.constructor().estimateGas({'from': ACCOUNT.address})
-    gas_estimate = CONTR_ARB.estimateGas(tx_params)
-    print(f"Estimated gas cost for flash laon arb 'makeFlashLoan': {gas_estimate}")
-    proc = input('\n procced? [y/n]\n > ')
-    assert proc == 'y', "Canceled 'makeFlashLoan', exiting"
+#    try:
+##        result = function.call({'from': sender_address})
+#        #gas_estimate = CONTR_ARB.constructor().estimateGas({'from': ACCOUNT.address})
+#        #gas_estimate = CONTR_ARB.estimateGas(tx_params)
+#        gas_estimate = W3.eth.estimateGas(tx_params)
+#        print(f"Estimated gas cost for flash laon arb 'makeFlashLoan': {gas_estimate}")
+#        proc = input('\n proceed? [y/n]\n > ')
+#        assert proc == 'y', "Canceled 'makeFlashLoan', exiting"
+#    except web3.exceptions.ContractLogicError as e:
+#        print(e)
+#        print_except(e)
+##        revert_reason = e.args[0]['message']
+##        print(f"Revert Reason: {revert_reason}")
+#        exit(1)
     
-    print('sing, send, and wait for receipt...')
+    print(f'sign, send, and wait for receipt... [{get_time_now()}]')
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
 
 def go_transfer():
@@ -325,28 +348,35 @@ READ_ME = f'''
 def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=True, mpf_ratio=1.0):
     # Estimate the gas cost for the transaction
     #gas_estimate = buy_tx.estimate_gas()
-    if rpc_url == pc_main:
-        gas_limit = 20_000_000 # max gas units to use for tx (required)
-        gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
-        max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
-        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+    gas_limit = GAS_LIMIT # max gas units to use for tx (required)
+    gas_price = GAS_PRICE # price to pay for each unit of gas (optional?)
+    max_fee = MAX_FEE # max fee per gas unit to pay (optional?)
+    max_prior_fee = MAX_PRIOR_FEE # max fee per gas unit to pay for priority (faster) (optional)
+    #max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+    #max_priority_fee = W3.to_wei('0.000000003', 'ether')
     
-    if rpc_url == eth_main:
-        # 102823 attempt #1
-        #   -1327: eth main -> FAIELD - $9 and ran out of gass
-        #gas_limit = 60_000 # max gas units to use for tx (required)
-        
-        # 102823 attempt #2 (success results)
-        #   Transaction Fee: 0.023065003454369288 ETH ($41.05)
-        #   Gas Price: 13.810783879 Gwei (0.000000013810783879 ETH)
-        #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
-        #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
-        gas_limit = 2_000_000 # max gas units to use for tx (required)
-        gas_price = W3.to_wei('18', 'gwei') # price to pay for each unit of gas (optional?)
-        max_fee = W3.to_wei('20', 'gwei') # max fee per gas unit to pay (optional?)
-        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+#    if rpc_url == pc_main:
+#        gas_limit = 20_000_000 # max gas units to use for tx (required)
+#        gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
+#        max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
+#        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+#        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
+#
+#    if rpc_url == eth_main:
+#        # 102823 attempt #1
+#        #   -1327: eth main -> FAIELD - $9 and ran out of gass
+#        #gas_limit = 60_000 # max gas units to use for tx (required)
+#
+#        # 102823 attempt #2 (success results)
+#        #   Transaction Fee: 0.023065003454369288 ETH ($41.05)
+#        #   Gas Price: 13.810783879 Gwei (0.000000013810783879 ETH)
+#        #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
+#        #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
+#        gas_limit = 2_000_000 # max gas units to use for tx (required)
+#        gas_price = W3.to_wei('9', 'gwei') # price to pay for each unit of gas (optional?)
+#        max_fee = W3.to_wei('15', 'gwei') # max fee per gas unit to pay (optional?)
+#        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
+#        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
 
     if min_params:
         return [{'gas':gas_limit}]

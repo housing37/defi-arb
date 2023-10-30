@@ -52,7 +52,9 @@ ACCESS_KEY = os.environ['ACCESS_KEY']
 SECRET_KEY = os.environ['SECRET_KEY']
 
 # infura support
-ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY']
+#ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY_0']
+ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY_1']
+
 
 # wallet support
 sender_address_0 = os.environ['PUBLIC_KEY_3']
