@@ -5,8 +5,6 @@ import env
 
 print('getting keys and setting globals ...')
 ## SETTINGS ##
-#SENDER_ADDRESS = env.sender_address_3 # deploy from
-#SENDER_SECRET = env.sender_secret_3 # deploy from
 abi_file = "../contracts/BalancerFLR.json"
 bin_file = "../contracts/BalancerFLR.bin"
 
