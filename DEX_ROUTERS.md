@@ -11,7 +11,9 @@
         addr: 0x03407772F5EBFB9B10Df007A2DD6FFf4EdE47B53
         addr: 0x564C4529E12FB5a48AD609820D37D15800c1f539
         addr: 0x696708Db871B77355d6C2bE7290B27CF0Bb9B24b
-        
+    
+    DEX: safemoonswap (found in .py logs; no research yet)
+    
     DEX: fraxswap (found in .py logs; no research yet)   
 
     DEX: radioshack (found in .py logs; no research yet)

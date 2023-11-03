@@ -8,7 +8,8 @@ cStrDivider_1 = '#--------------------------------------------------------------
 #------------------------------------------------------------#
 #   IMPORTS                                                  #
 #------------------------------------------------------------#
-import sys, os, time, traceback
+import sys, os, time, traceback, json, pprint
+from attributedict.collections import AttributeDict
 from datetime import datetime
 from web3 import Account, Web3, HTTPProvider
 import web3
@@ -23,12 +24,6 @@ import env
 #------------------------------------------------------------#
 ## STATIC CONSTANTS
 AMNT_MAX = 115792089237316195423570985008687907853269984665640564039457584007913129639935 # uint256.max
-local_test = 'http://localhost:8545'
-eth_main = f'https://mainnet.infura.io/v3/{env.ETH_MAIN_RPC_KEY}'
-eth_test = f'https://goerli.infura.io/v3/'
-pc_main = f'https://rpc.pulsechain.com'
-eth_main_cid=1
-pc_main_cid=369
 
 ROUTER_UNISWAP_V3 = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 ROUTER_PANCAKESWAP_V3 = '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4'
@@ -43,57 +38,108 @@ ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 
 ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
 
+#------------------------------------------------------------#
+print('getting keys and setting globals ...')
 ## SETTINGS ##
-SENDER_ADDRESS = env.sender_address_3 # deploy from
-SENDER_SECRET = env.sender_secret_3 # deploy from
+abi_file = "../contracts/BalancerFLR.json"
+bin_file = "../contracts/BalancerFLR.bin"
+LST_CONTR_ARB_ADDR = [
+    "0x59012124c297757639e4ab9b9e875ec80a5c51da", # deployed eth main 102823_1550
+    "0x48af7d501bca526171b322ac2d8387a8cf085850", # deployed eth main 102823_2140
+    "0x0B3f73687A5F78ACbdEccF860cEd0d8A5630F806", # deployed pc main 103023_2128
+    "0xc2fa6dF341b18AE3c283CE3E7C0f1b4F5F6cabBb", # deployed pc main 110123_1953
+    "0x42b2dDF6cd1C4c269785a228D40307a1e0441c77", # deployed pc main 110323_1649
+    "0xF02e6E28E250073583766D77e161f67C21aEe388", # deployed pc main 110323_1715
+]
+#------------------------------------------------------------#
+sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
+assert 0 <= int(sel_chain) <= 1, 'Invalid entry, abort'
+(RPC_URL, CHAIN_ID) = (env.eth_main, env.eth_main_cid) if int(sel_chain) == 0 else (env.pc_main, env.pc_main_cid)
+print(f'  selected {(RPC_URL, CHAIN_ID)}')
 
-#CONTR_ARB_ADDR = "0x59012124c297757639e4ab9b9e875ec80a5c51da" # deployed eth main 102823_1550
-CONTR_ARB_ADDR = "0x48af7d501bca526171b322ac2d8387a8cf085850" # deployed eth main 102823_2140
-
-RPC_URL = eth_main
-CHAIN_ID = eth_main_cid
-#CONTR_ARB_ADDR = "0x892c6304870dbCeC69697D41298E9543B055F476" # deployed pc main 102823
-#RPC_URL = pc_main
-#CHAIN_ID = pc_main_cid
-
-print(f'reading abi file for CONTR_ARB_ADDR: {CONTR_ARB_ADDR}...')
+sel_send = input(f'\nSelect sender: (_event_listener: n/a)\n  0 = {env.sender_address_3}\n  1 = {env.sender_address_1}\n  > ')
+assert 0 <= int(sel_send) <= 1, 'Invalid entry, abort'
+(SENDER_ADDRESS, SENDER_SECRET) = (env.sender_address_3, env.sender_secret_3) if int(sel_send) == 0 else (env.sender_address_1, env.sender_secret_1)
+print(f'  selected {SENDER_ADDRESS}')
+#------------------------------------------------------------#
+print(f'\nSelect arbitrage contract to use:')
+for i, v in enumerate(LST_CONTR_ARB_ADDR): print(' ',i, '=', v)
+idx = input('  > ')
+assert 0 <= int(idx) < len(LST_CONTR_ARB_ADDR), 'Invalid input, aborting...\n'
+CONTR_ARB_ADDR = str(LST_CONTR_ARB_ADDR[int(idx)])
+#------------------------------------------------------------#
+print(f'''\nINITIALIZING web3 ...
+    RPC: {RPC_URL}
+    ChainID: {CHAIN_ID}
+    SENDER: {SENDER_ADDRESS}
+    ARB CONTRACT: {CONTR_ARB_ADDR}''')
+W3 = Web3(HTTPProvider(RPC_URL))
+ACCOUNT = Account.from_key(SENDER_SECRET) # default
+#------------------------------------------------------------#
+print(f'\nreading abi file & initializing contract {CONTR_ARB_ADDR} ...')
 with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
+CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
+CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
+#------------------------------------------------------------#
+print('calc gas settings...')
+if int(sel_chain) == 0:
+    # ethereum main net (update_102923)
+    GAS_LIMIT = 3_000_000# max gas units to use for tx (required)
+    GAS_PRICE = W3.to_wei('10', 'gwei') # price to pay for each unit of gas (optional?)
+    MAX_FEE = W3.to_wei('14', 'gwei') # max fee per gas unit to pay (optional?)
+    MAX_PRIOR_FEE_RATIO = 1.0 # W3.eth.max_priority_fee * mpf_ratio # max fee per gas unit to pay for priority (faster) (optional)
+    MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * MAX_PRIOR_FEE_RATIO) # max fee per gas unit to pay for priority (faster) (optional)
+else:
+    # pulsechain main net (update_103123)
+    GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
+    GAS_PRICE = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional?)
+    MAX_FEE = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional?)
+    MAX_PRIOR_FEE_RATIO = 1.0
+    MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * MAX_PRIOR_FEE_RATIO) # max fee per gas unit to pay for priority (faster) (optional)
 
+print(f'''\nSetting gas params ...
+    GAS_LIMIT: {GAS_LIMIT}
+    GAS_PRICE: {GAS_PRICE}
+    MAX_FEE: {MAX_FEE}
+    MAX_PRIOR_FEE: {MAX_PRIOR_FEE}''')
+#------------------------------------------------------------#
+print(f'\nreading contract abi & bytecode files ...')
+with open(abi_file, "r") as file: CONTR_ABI = file.read()
+with open(bin_file, "r") as file: CONTR_BYTES = '0x'+file.read()
+#------------------------------------------------------------#
+    
 print(f'finalizing arb settings...')
 ROUTER_0 = ROUTER_UNISWAP_V3
 ROUTER_1 = ROUTER_UNISWAP_V3
 
-ADDR_IN_0 = ADDR_WETH
-ADDR_OUT_MIN_0 = ADDR_WBTC
-ADDR_IN_1 = ADDR_WBTC
-ADDR_OUT_MIN_1 = ADDR_USDC
+ADDR_LOAN = ADDR_WETH
 
-AMNT_IN_0 = '19.1743'
-AMNT_OUT_MIN_1 = '34005.5729'
+ADDR_IN_0 = ADDR_WBTC
+ADDR_OUT_MIN_0 = ADDR_USDT
+ADDR_IN_1 = ADDR_USDT
+ADDR_OUT_MIN_1 = ADDR_WBTC
+
+AMNT_IN_0 = '19.1442'
+AMNT_OUT_MIN_1 = '19.1909'
+LST_ARB_KEYS = [
+        ['ROUTER_0', 'ROUTER_1'],
+        [['ADDR_IN_0', 'ADDR_OUT_MIN_0'], ['ADDR_IN_1', 'ADDR_OUT_MIN_1']],
+        ['AMNT_IN_0', 'AMNT_OUT_MIN_1']
+    ]
 LST_ARB = [
         [ROUTER_0, ROUTER_1],
         [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
         [AMNT_IN_0, AMNT_OUT_MIN_1]
     ]
+LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
-print(f'\nCONNECTING to: {RPC_URL} _ cid: {CHAIN_ID}\n from sender account: {SENDER_ADDRESS}')
-W3 = Web3(Web3.HTTPProvider(RPC_URL))
-ACCOUNT = Account.from_key(SENDER_SECRET) # default
-CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
-CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
+#print(f'\nCONNECTING to: {RPC_URL} _ cid: {CHAIN_ID}\n from sender account: {SENDER_ADDRESS}')
+#W3 = Web3(Web3.HTTPProvider(RPC_URL))
+#ACCOUNT = Account.from_key(SENDER_SECRET) # default
+#CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
+#CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
 
-print('calc gas settings...')
-# ethereum main net
-GAS_LIMIT = 2_000_000# max gas units to use for tx (required)
-GAS_PRICE = W3.to_wei('9', 'gwei') # price to pay for each unit of gas (optional?)
-MAX_FEE = W3.to_wei('14', 'gwei') # max fee per gas unit to pay (optional?)
-MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * 1.0) # 1.0=mpf_ratio # max fee per gas unit to pay for priority (faster) (optional)
 
-# pulsechain main net
-#GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
-#GAS_PRICE = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional?)
-#MAX_FEE = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional?)
-#MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -132,15 +178,25 @@ def tx_sign_send_wait(tx, wait_rec=True):
     global ACCOUNT
     signed_tx = W3.eth.account.sign_transaction(tx, ACCOUNT.key)
     tx_hash = W3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    print(cStrDivider_1, f'[{get_time_now()}] _ TX sent\n tx_hash: {tx_hash.hex()}\n tx_params: {tx}\n wait_rec={wait_rec}', cStrDivider_1, sep='\n')
+
+    # print outgoing tx (required json print)
+    pjson = json.dumps(tx, indent=4)
+    print(cStrDivider_1, f'[{get_time_now()}] _ TX sent\n tx_hash: {tx_hash.hex()}\n wait_receipt={wait_rec}', f' tx_params:\n  {pjson}', cStrDivider_1,sep='\n')
+
     if wait_rec:
         print(f'[{get_time_now()}] _ WAITING for mined tx receipt\n tx_hash: {tx_hash.hex()} ...') # wait for receipt
         tx_receipt = W3.eth.wait_for_transaction_receipt(tx_hash)
-        if tx_receipt and tx_receipt['status'] == 1:
+        if not tx_receipt: tx_receipt = {'status':-37}
+
+        # print incoming tx receipt (requires pprint & AttributeDict)
+        tx_receipt = AttributeDict(tx_receipt) # import required
+        tx_rc_print = pprint.PrettyPrinter().pformat(tx_receipt)
+
+        if tx_receipt['status'] == 1:
             print(f"[{get_time_now()}] _ SUCCESS! tx mined\n tx_hash: {tx_hash.hex()}", cStrDivider_1, sep='\n')
-            print(cStrDivider_1, f'TRANSACTION RECEIPT:\n {tx_receipt}', cStrDivider_1, sep='\n')
+            print(cStrDivider_1, f'TRANSACTION RECEIPT:\n  {tx_rc_print}', cStrDivider_1, sep='\n')
         else:
-            print(cStrDivider, cStrDivider, f'\n[{get_time_now()}] _ *ERROR* _ "build_sign_send_tx" execution failed...\n tx_hash: {tx_hash.hex()}\n TRANSACTION RECEIPT: {tx_receipt}\n', cStrDivider, cStrDivider, sep='\n')
+            print(cStrDivider, cStrDivider, f"\n[{get_time_now()}] _ *ERROR* _ status = {tx_receipt['status']} _ 'tx_sign_send_wait' execution failed...\n tx_hash: {tx_hash.hex()}\n TRANSACTION RECEIPT:\n  {tx_rc_print}\n", cStrDivider, cStrDivider, sep='\n')
         return tx_hash, tx_receipt, wait_rec
     return tx_hash, {}, wait_rec
     # Once the transaction is mined, you have successfully called the `makeFlashLoan` function with the `userData` parameter in your Solidity contract
@@ -157,7 +213,8 @@ def go_loan():
     #    allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
     #print(cStrDivider_1, 'DONE - validate allowance', sep='\n')
     
-    print(f'setting arb tx params... [{get_time_now()}]')
+    print(f'setting arb tx params data... [{get_time_now()}]')
+    print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
     addr_arb_contr = CONTR_ARB_ADDR
     
     router_0 = LST_ARB[0][0]
@@ -169,29 +226,76 @@ def go_loan():
     amntIn_0 = W3.toWei(LST_ARB[2][0], 'ether')
     amntOutMin_1 = W3.toWei(LST_ARB[2][1], 'ether')
 
-    print('encoding arb tx abi...')
+    print('encoding arb tx params data abi...')
     # NOTE: if receive runtime error w/ encode_abi
     #   pointing to: /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/ethereum/abi.py
     #   then check the len of list of types vs len of data_to_encode
-    data_to_encode = (router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1)
-    encoded_data = encode_abi(['address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'], data_to_encode)
+#    data_to_encode = (router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1)
+#    encoded_data = encode_abi(['address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'], data_to_encode)
 
+    import eth_abi
+    data_to_encode = [router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1]
+    encoded_data = eth_abi.encode_abi(('address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'), data_to_encode)
+    
     # Define the array of IERC20 tokens for loan (w/ amounts)
-    lst_tok_addr = [addr_path_0[0]]
+#    lst_tok_addr = [addr_path_0[0]]
+    lst_tok_addr = [ADDR_LOAN]
     lst_tok_amnt = [amntIn_0]
 
+    print(f'setting function call...\n lst_tok_addr: {lst_tok_addr}\n lst_tok_amnt: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
+    flash_loan_function = CONTR_ARB.functions.makeFlashLoan(
+        lst_tok_addr,
+        lst_tok_amnt,
+        encoded_data
+    )
+
+    # FAILES because 'from' is not set yet (.sol checks for owner)
+    try:
+        gas_estimate = flash_loan_function.estimateGas()
+        print(f'gas_estimate... {gas_estimate}')
+    except Exception as e:
+        gas_estimate = 200000
+        print(e) # failed solidity "require(...,'')"
+        print("Failed to estimate gas, attempting to send with", gas_estimate, "gas limit...")
+        
     print('preparing tx...')
     tx_params = {
         'chainId':CHAIN_ID, # required
         'from': ACCOUNT.address,
-        'to': addr_arb_contr,
+#        'to': addr_arb_contr,
         'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
-        'data': CONTR_ARB.encodeABI(fn_name='makeFlashLoan', args=[lst_tok_addr, lst_tok_amnt, encoded_data]),
+#        'data': CONTR_ARB.encodeABI(fn_name='makeFlashLoan', args=[lst_tok_addr, lst_tok_amnt, encoded_data]),
     }
+#    gas_estimate = W3.eth.estimateGas(tx_params)
+#    print(f"\nEstimated gas cost _ 0: {gas_estimate}")
     
     print('setting gas params...')
     lst_gas_params = get_gas_params_lst(RPC_URL, min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
     for d in lst_gas_params: tx_params.update(d) # append gas params
+    data = flash_loan_function.buildTransaction(tx_params)
+#    # Create a transaction dictionary
+#    transaction = {
+#        'from': ACCOUNT.address,
+#        'to': addr_arb_contr,
+#        'data': data['data'],
+#        'gas': GAS_LIMIT,  # Set a reasonable initial gas limit
+#        'gasPrice': GAS_PRICE,  # Set your desired gas price
+#        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+#    }
+#
+#    # Estimate the gas cost for the transaction
+#    estimate_gas = W3.eth.estimateGas(transaction)
+#    print("Gas Estimate:", estimaxte_gas)
+
+
+#    try:
+#        gas_estimate = flash_loan_function.estimateGas()
+#        print(f'gas_estimate... {gas_estimate}')
+#    except Exception as e:
+#        gas_estimate = 200000
+#        print(e) # failed solidity "require(...,'')"
+#        print("Failed to estimate gas, attempting to send with", gas_estimate, "gas limit...")
+    assert input('\n procced? [y/n]\n > ') == 'y', '...aborted'
 
 #    try:
 ##        result = function.call({'from': sender_address})
@@ -208,8 +312,9 @@ def go_loan():
 ##        print(f"Revert Reason: {revert_reason}")
 #        exit(1)
     
-    print(f'sign, send, and wait for receipt... [{get_time_now()}]')
-    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
+    print(f'\nsign, send, and wait for receipt... [{get_time_now()}]')
+#    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
+    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(data, wait_rec=True)
 
 def go_transfer():
     global CHAIN_ID, RPC_URL
@@ -354,29 +459,6 @@ def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=T
     max_prior_fee = MAX_PRIOR_FEE # max fee per gas unit to pay for priority (faster) (optional)
     #max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
     #max_priority_fee = W3.to_wei('0.000000003', 'ether')
-    
-#    if rpc_url == pc_main:
-#        gas_limit = 20_000_000 # max gas units to use for tx (required)
-#        gas_price = W3.to_wei('0.0009', 'ether') # price to pay for each unit of gas (optional)
-#        max_fee = W3.to_wei('0.002', 'ether') # max fee per gas unit to pay (optional)
-#        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-#        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
-#
-#    if rpc_url == eth_main:
-#        # 102823 attempt #1
-#        #   -1327: eth main -> FAIELD - $9 and ran out of gass
-#        #gas_limit = 60_000 # max gas units to use for tx (required)
-#
-#        # 102823 attempt #2 (success results)
-#        #   Transaction Fee: 0.023065003454369288 ETH ($41.05)
-#        #   Gas Price: 13.810783879 Gwei (0.000000013810783879 ETH)
-#        #   Gas Limit & Usage by Txn: 2,000,000 | 1,670,072 (83.5%)
-#        #   Gas Fees:  Base: 13.786484941 Gwei |Max: 18 Gwei |Max Priority: 0.024298938 Gwei
-#        gas_limit = 2_000_000 # max gas units to use for tx (required)
-#        gas_price = W3.to_wei('9', 'gwei') # price to pay for each unit of gas (optional?)
-#        max_fee = W3.to_wei('15', 'gwei') # max fee per gas unit to pay (optional?)
-#        max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
-#        #max_priority_fee = W3.to_wei('0.000000003', 'ether')
 
     if min_params:
         return [{'gas':gas_limit}]

@@ -5,6 +5,7 @@ pragma solidity ^0.8.22;
 import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 import {ISwapRouter} from "https://github.com/Uniswap/v3-periphery/blob/v1.2.0/contracts/interfaces/ISwapRouter.sol";
+//import {IQuoter} from "https://github.com/Uniswap/v3-periphery/blob/v1.2.0/contracts/interfaces/IQuoter.sol";
 
 // house_102823 (testing...)
 interface IUniswapV2 {
@@ -23,11 +24,15 @@ interface IUniswapV2 {
         uint deadline
     ) external returns (uint[] memory amounts);
 }
-
+interface IUniswapRouter is ISwapRouter {
+    function refundETH() external payable;
+}
 contract BalancerFLR is IFlashLoanRecipient {
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
     address private constant uniswapRouterV3 = address(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    // IUniswapRouter public constant uniswapRouter = IUniswapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    
     address private constant balancerRouter = address(0x37);
     address public _owner;
 
@@ -79,35 +84,33 @@ contract BalancerFLR is IFlashLoanRecipient {
         // uint[] memory amntOut_v2;
         uint256 amntOut;
         
-        // check for uniswap v3 integration (requires bytes memory 'path' param)
+        // check for various dex protocol integration (uniswaip v2, v3, balancer)
         if (router_0 == balancerRouter) {
-            emit logRFL(address(this), msg.sender, "logRFL 3");
             // found balancer protocol integration
+            emit logRFL(address(this), msg.sender, "logRFL 3");
             amntOut = swap_balancer(router_0, path_0, amntIn_0, 1);
         } else if (router_0 == uniswapRouterV3) {
+            // found uniswap v3 protocol integration
             emit logRFL(address(this), msg.sender, "logRFL 3a");
-            // convert path to bytes memory
-            bytes memory bytes_path = addressesToBytes(path_0);
-            amntOut = swap_v3(router_0, bytes_path, amntIn_0, 1);
+            amntOut = swap_v3(router_0, path_0, amntIn_0, 1);
         } else {
-            emit logRFL(address(this), msg.sender, "logRFL 3b");
             // found uniswap v2 protocol integration
+            emit logRFL(address(this), msg.sender, "logRFL 3b");
             amntOut = swap_v2(router_0, path_0, amntIn_0, 1);
         }
         
-        // check for uniswap v3 integration (requires bytes memory 'path' param)
+        // check for various dex protocol integration (uniswaip v2, v3, balancer)
         if (router_0 == balancerRouter) {
-            emit logRFL(address(this), msg.sender, "logRFL 4");
             // found balancer protocol integration
+            emit logRFL(address(this), msg.sender, "logRFL 4");
             amntOut = swap_balancer(router_1, path_1, amntOut, amntOutMin_1);
         } else if (router_1 == uniswapRouterV3) {
+            // found uniswap v3 protocol integration
             emit logRFL(address(this), msg.sender, "logRFL 4a");
-            // convert path to bytes memory
-            bytes memory bytes_path = addressesToBytes(path_1);
-            amntOut = swap_v3(router_1, bytes_path, amntOut, amntOutMin_1);
+            amntOut = swap_v3(router_1, path_1, amntOut, amntOutMin_1);
         } else {
-            emit logRFL(address(this), msg.sender, "logRFL 4b");
             // found uniswap v2 protocol integration
+            emit logRFL(address(this), msg.sender, "logRFL 4b");
             amntOut = swap_v2(router_1, path_1, amntOut, amntOutMin_1);
         }
         emit logRFL(address(this), msg.sender, "logRFL -1");
@@ -135,7 +138,12 @@ contract BalancerFLR is IFlashLoanRecipient {
         tok.transfer(to, amount);
     }
 
+    // balancer: balancer only
     function swap_balancer(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
+        emit logRFL(address(this), msg.sender, "logRFL 6a");
+        IERC20(address(path[0])).approve(address(router), amntIn);
+        
+        emit logRFL(address(this), msg.sender, "logRFL 6b");
         IVault.FundManagement memory funds = IVault.FundManagement({
             sender: address(this),
             fromInternalBalance: true,
@@ -143,6 +151,7 @@ contract BalancerFLR is IFlashLoanRecipient {
             toInternalBalance: false
         });
 
+        emit logRFL(address(this), msg.sender, "logRFL 6c");
         bytes32 pool_id = addressToBytes32(router);
         IVault.SingleSwap memory singleSwap = IVault.SingleSwap({
             poolId: pool_id, // poolId: bytes32(0xYourPoolId)
@@ -153,26 +162,28 @@ contract BalancerFLR is IFlashLoanRecipient {
             userData: bytes("Your user data") // Replace with your user data
         });
         
+        emit logRFL(address(this), msg.sender, "logRFL 6d");
         uint deadline = block.timestamp + 300;
         uint256 limit = amntOutMin;
         uint256 amountCalculated = vault.swap(singleSwap,funds,limit,deadline);
         
+        emit logRFL(address(this), msg.sender, "logRFL 6e");
         return amountCalculated;
     }
     
-    function swap_v3(address router, bytes memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
+    // v3: uniswap v3
+    function swap_v3(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
         emit logRFL(address(this), msg.sender, "logRFL 5a");
-        
-        // v3: uniswap v3
-        ISwapRouter swapRouter = ISwapRouter(router);
+        IUniswapRouter swapRouter = IUniswapRouter(router);
         
         emit logRFL(address(this), msg.sender, "logRFL 5b");
-        IERC20(address(this)).approve(address(swapRouter), amntIn);
+        IERC20(address(path[0])).approve(address(swapRouter), amntIn);
         uint deadline = block.timestamp + 300;
-        
+
         emit logRFL(address(this), msg.sender, "logRFL 5c");
+        bytes memory bytes_path = addressesToBytes(path); // convert path to bytes memory
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: path,
+            path: bytes_path,
             recipient: address(this),
             deadline: deadline,
             amountIn: amntIn,
@@ -181,16 +192,19 @@ contract BalancerFLR is IFlashLoanRecipient {
         
         emit logRFL(address(this), msg.sender, "logRFL 5d");
         uint256 amntOut = swapRouter.exactInput(params);
+        swapRouter.refundETH();
+        
+        emit logRFL(address(this), msg.sender, "logRFL 5e");
         return amntOut;
     }
     
+    // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2
     function swap_v2(address router, address[] memory path, uint256 amntIn, uint256 amntOutMin) private returns (uint256) {
         emit logRFL(address(this), msg.sender, "logRFL 6a");
-        // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2
         IUniswapV2 swapRouter = IUniswapV2(router);
         
         emit logRFL(address(this), msg.sender, "logRFL 6b");
-        IERC20(address(this)).approve(address(swapRouter), amntIn);
+        IERC20(address(path[0])).approve(address(swapRouter), amntIn);
         uint deadline = block.timestamp + 300;
         
         emit logRFL(address(this), msg.sender, "logRFL 6c");
