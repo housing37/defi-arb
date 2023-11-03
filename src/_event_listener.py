@@ -36,6 +36,7 @@ LST_CONTR_ARB_ADDR = [
     "0xc2fa6dF341b18AE3c283CE3E7C0f1b4F5F6cabBb", # deployed pc main 110123_1953
     "0x42b2dDF6cd1C4c269785a228D40307a1e0441c77", # deployed pc main 110323_1649
     "0xF02e6E28E250073583766D77e161f67C21aEe388", # deployed pc main 110323_1715
+    "0xc3B031914Ef19E32859fbe72b52e1240335B60da", # deployed pc main 110323_1759
 ]
 print(f'\nSelect arbitrage contract to use:')
 for i, v in enumerate(LST_CONTR_ARB_ADDR): print(' ',i, '=', v)

@@ -100,7 +100,7 @@ contract BalancerFLR is IFlashLoanRecipient {
         }
         
         // check for various dex protocol integration (uniswaip v2, v3, balancer)
-        if (router_0 == balancerRouter) {
+        if (router_1 == balancerRouter) {
             // found balancer protocol integration
             emit logRFL(address(this), msg.sender, "logRFL 4");
             amntOut = swap_balancer(router_1, path_1, amntOut, amntOutMin_1);
@@ -191,6 +191,7 @@ contract BalancerFLR is IFlashLoanRecipient {
         });
         
         emit logRFL(address(this), msg.sender, "logRFL 5d");
+        //address(swapRouter).transfer(msg.value);
         uint256 amntOut = swapRouter.exactInput(params);
         swapRouter.refundETH();
         
