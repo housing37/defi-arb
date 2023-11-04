@@ -16,6 +16,7 @@ import web3
 from ethereum.abi import encode_abi # pip install ethereum
 import env
 from _constants import *
+import eth_abi
 #import inspect # this_funcname = inspect.stack()[0].function
 #parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #sys.path.append(parent_dir) # import from parent dir of this file
@@ -106,47 +107,9 @@ LST_ARB = [
     ]
 LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
-#print(f'\nCONNECTING to: {RPC_URL} _ cid: {CHAIN_ID}\n from sender account: {SENDER_ADDRESS}')
-#W3 = Web3(Web3.HTTPProvider(RPC_URL))
-#ACCOUNT = Account.from_key(SENDER_SECRET) # default
-#CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
-#CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
-
-
-
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
 #------------------------------------------------------------#
-# allowance for 'contract_a' to spend 'accnt' tokens, inside 'contract_b'
-def get_allowance(contract_a, accnt, contract_b, go_print=True):
-    allow_num = contract_b.functions.allowance(accnt.address, contract_a.address).call()
-    if go_print:
-        print(f'Function "allowance" executed successfully...\n contract_b: {contract_b.address}\n shows allowance for contract_a: {contract_a.address}\n to spend tokens from sender_address: {accnt.address}\n token amnt allowed: {allow_num}')
-    return allow_num
-
-# contract_a approves (grants allowance for) contract_b to spend SENDER_ADDRESS tokens
-def set_approval(contract_a, contract_b, amnt=-1):
-    global W3, ACCOUNT, CHAIN_ID
-    #bal_eth = get_sender_pls_bal(go_print=True)
-    
-    print('set_approval _ build, sign, & send tx ...')
-    d_tx_data = {
-            'chainId': CHAIN_ID,  # Replace with the appropriate chain ID (Mainnet)
-            'gas': 20000000,  # Adjust the gas limit as needed
-            'gasPrice': W3.to_wei('4000000', 'gwei'),  # Set the gas price in Gwei
-            'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
-        }
-    tx_data = contract_a.functions.approve(contract_b.address, amnt).buildTransaction(d_tx_data) # build tx
-    signed_tx = W3.eth.account.signTransaction(tx_data, private_key=ACCOUNT.key) # sign tx
-    tx_hash = W3.eth.sendRawTransaction(signed_tx.rawTransaction) # send tx
-    
-    print(f'[{get_time_now()}] _ WAITING for mined receipt\n tx_hash: {tx_hash.hex()} ...') # wait for receipt
-    tx_receipt = W3.eth.waitForTransactionReceipt(tx_hash)
-    if tx_receipt and tx_receipt['status'] == 1:
-        print(f"[{get_time_now()}] _ 'approve' SUCCESS:\n contract_a: {contract_a.address}\n approved contract_b: {contract_b.address}\n to spend SENDER_ADDRESS: {ACCOUNT.address} tokens\n amnt allowed: {amnt}\n tx_hash: {tx_hash.hex()}\n Transaction receipt: {tx_receipt}")
-    else:
-        print(f'*ERROR* Function "approve" execution failed...\n tx_hash: {tx_hash.hex()}\n Transaction receipt: {tx_receipt}')
-            
 def tx_sign_send_wait(tx, wait_rec=True):
     global ACCOUNT
     signed_tx = W3.eth.account.sign_transaction(tx, ACCOUNT.key)
@@ -177,15 +140,6 @@ def tx_sign_send_wait(tx, wait_rec=True):
 # router contract, tok_contr (in), amount_exact (in_ET-T|out_T-ET), swap_path, swap_type (ET-T|T-ET)
 def go_loan():
     global W3, ACCOUNT, LST_ARB, CHAIN_ID, RPC_URL, CONTR_ARB
-    
-    # check tok_contr allowance for swap, and approve if needed, then check again
-    #print('\nSTART - validate allowance ...', cStrDivider_1, sep='\n')
-    #allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
-    #if allow_num == 0:
-    #    set_approval(tok_contr, rout_contr, AMNT_MAX) # tok_contr approves rout_contr to spend
-    #    allow_num = get_allowance(rout_contr, ACCOUNT, tok_contr, go_print=True) # rout_contr can spend in tok_contr
-    #print(cStrDivider_1, 'DONE - validate allowance', sep='\n')
-    
     print(f'setting arb tx params data... [{get_time_now()}]')
     print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
     addr_arb_contr = CONTR_ARB_ADDR
@@ -203,17 +157,12 @@ def go_loan():
     # NOTE: if receive runtime error w/ encode_abi
     #   pointing to: /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/ethereum/abi.py
     #   then check the len of list of types vs len of data_to_encode
-#    data_to_encode = (router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1)
-#    encoded_data = encode_abi(['address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'], data_to_encode)
-
-    import eth_abi
     data_to_encode = [router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1]
     encoded_data = eth_abi.encode_abi(('address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'), data_to_encode)
     
     # Define the array of IERC20 tokens for loan (w/ amounts)
-#    lst_tok_addr = [addr_path_0[0]]
-    lst_tok_addr = [ADDR_LOAN_TOK]
-    lst_tok_amnt = [AMNT_LOAN_TOK]
+    lst_tok_addr = [ADDR_LOAN_TOK] # tokens to receive loan
+    lst_tok_amnt = [AMNT_LOAN_TOK] # amnt to receive
 
     print(f'setting function call...\n lst_tok_addr: {lst_tok_addr}\n lst_tok_amnt: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(
@@ -235,58 +184,16 @@ def go_loan():
     tx_params = {
         'chainId':CHAIN_ID, # required
         'from': ACCOUNT.address,
-#        'to': addr_arb_contr,
         'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
-#        'data': CONTR_ARB.encodeABI(fn_name='makeFlashLoan', args=[lst_tok_addr, lst_tok_amnt, encoded_data]),
     }
-#    gas_estimate = W3.eth.estimateGas(tx_params)
-#    print(f"\nEstimated gas cost _ 0: {gas_estimate}")
     
     print('setting gas params...')
     lst_gas_params = get_gas_params_lst(RPC_URL, min_params=False, max_params=True, def_params=True, mpf_ratio=1.0)
     for d in lst_gas_params: tx_params.update(d) # append gas params
     data = flash_loan_function.buildTransaction(tx_params)
-#    # Create a transaction dictionary
-#    transaction = {
-#        'from': ACCOUNT.address,
-#        'to': addr_arb_contr,
-#        'data': data['data'],
-#        'gas': GAS_LIMIT,  # Set a reasonable initial gas limit
-#        'gasPrice': GAS_PRICE,  # Set your desired gas price
-#        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
-#    }
-#
-#    # Estimate the gas cost for the transaction
-#    estimate_gas = W3.eth.estimateGas(transaction)
-#    print("Gas Estimate:", estimaxte_gas)
-
-
-#    try:
-#        gas_estimate = flash_loan_function.estimateGas()
-#        print(f'gas_estimate... {gas_estimate}')
-#    except Exception as e:
-#        gas_estimate = 200000
-#        print(e) # failed solidity "require(...,'')"
-#        print("Failed to estimate gas, attempting to send with", gas_estimate, "gas limit...")
     assert input('\n procced? [y/n]\n > ') == 'y', '...aborted'
-
-#    try:
-##        result = function.call({'from': sender_address})
-#        #gas_estimate = CONTR_ARB.constructor().estimateGas({'from': ACCOUNT.address})
-#        #gas_estimate = CONTR_ARB.estimateGas(tx_params)
-#        gas_estimate = W3.eth.estimateGas(tx_params)
-#        print(f"Estimated gas cost for flash laon arb 'makeFlashLoan': {gas_estimate}")
-#        proc = input('\n proceed? [y/n]\n > ')
-#        assert proc == 'y', "Canceled 'makeFlashLoan', exiting"
-#    except web3.exceptions.ContractLogicError as e:
-#        print(e)
-#        print_except(e)
-##        revert_reason = e.args[0]['message']
-##        print(f"Revert Reason: {revert_reason}")
-#        exit(1)
     
     print(f'\nsign, send, and wait for receipt... [{get_time_now()}]')
-#    tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(tx_params, wait_rec=True)
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(data, wait_rec=True)
 
 def go_transfer():
