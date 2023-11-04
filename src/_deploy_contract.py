@@ -1,16 +1,19 @@
+cStrDivider_1 = '#----------------------------------------------------------------#'
 from web3 import Web3, HTTPProvider
 from web3.middleware import construct_sign_and_send_raw_middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy
 import env
-
+import pprint
+from attributedict.collections import AttributeDict # tx_receipt requirement
+from _constants import *
 #------------------------------------------------------------#
-print('getting keys and setting globals ...')
-## SETTINGS ##
-#abi_file = "../contracts/BalancerFLR.json"
-#bin_file = "../contracts/BalancerFLR.bin"
-abi_file = "../contracts/BalancerFLR_test.json"
-bin_file = "../contracts/BalancerFLR_test.bin"
-
+#print('getting keys and setting globals ...')
+### SETTINGS ##
+##abi_file = "../contracts/BalancerFLR.json"
+##bin_file = "../contracts/BalancerFLR.bin"
+#abi_file = "../contracts/BalancerFLR_test.json"
+#bin_file = "../contracts/BalancerFLR_test.bin"
+#------------------------------------------------------------#
 sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
 assert 0 <= int(sel_chain) <= 1, 'Invalid entry, abort'
 (RPC_URL, CHAIN_ID) = (env.eth_main, env.eth_main_cid) if int(sel_chain) == 0 else (env.pc_main, env.pc_main_cid)
@@ -35,8 +38,8 @@ if int(sel_chain) == 0:
 else:
     # pulsechain main net (update_103123)
     GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
-    GAS_PRICE = W3.to_wei('0.0005', 'ether') # price to pay for each unit of gas (optional?)
-    MAX_FEE = W3.to_wei('0.001', 'ether') # max fee per gas unit to pay (optional?)
+    GAS_PRICE = W3.to_wei('0.00025', 'ether') # price to pay for each unit of gas (optional?)
+    MAX_FEE = W3.to_wei('0.005', 'ether') # max fee per gas unit to pay (optional?)
     MAX_PRIOR_FEE_RATIO = 1.0
     MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * MAX_PRIOR_FEE_RATIO) # max fee per gas unit to pay for priority (faster) (optional)
 
@@ -81,10 +84,10 @@ def estimate_gas():
     gas_price = W3.eth.gas_price
     gas_price_1018 = gas_price * 10**18
     gas_price_eth = W3.fromWei(gas_price, 'ether')
-    print(f"\nEstimated gas cost _ 1: {gas_estimate}")
-    print(f"\nCurrent gas price: {gas_price} W3.eth.gas_price")
-    print(f"\nCurrent gas price: {gas_price_eth} PLS")
-    print(f"\nCurrent gas price: {gas_price_1018} maybe")
+    print(f"Estimated gas cost _ 1: {gas_estimate}")
+    print(f" Current gas price: {gas_price} W3.eth.gas_price")
+    print(f" Current gas price: {gas_price_eth} PLS")
+    print(f" Current gas price: {gas_price_1018} maybe")
     # Optionally, you can also estimate the gas price (in Gwei) using a gas price strategy
     # Replace 'fast' with other strategies like 'medium' or 'slow' as needed
     #gas_price = W3.eth.generateGasPrice(fast_gas_price_strategy)
@@ -139,14 +142,14 @@ print('signing and sending tx ...')
 tx_signed = W3.eth.account.signTransaction(constructor_tx, private_key=SENDER_SECRET)
 tx_hash = W3.eth.sendRawTransaction(tx_signed.rawTransaction)
 
-print('waiting for receipt ...')
+print(cStrDivider_1, 'waiting for receipt ...', sep='\n')
 print(f'    tx_hash: {tx_hash.hex()}')
 # Wait for the transaction to be mined
-receipt = W3.eth.waitForTransactionReceipt(tx_hash)
-#print(f'RECEIPT:\n {receipt}')
-# Pretty print the dictionary
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(f'RECEIPT:\n {receipt}')
+tx_receipt = W3.eth.waitForTransactionReceipt(tx_hash)
+
+# print incoming tx receipt (requires pprint & AttributeDict)
+tx_receipt = AttributeDict(tx_receipt) # import required
+tx_rc_print = pprint.PrettyPrinter().pformat(tx_receipt)
+print(cStrDivider_1, f'RECEIPT:\n {tx_rc_print}', sep='\n')
 contract_address = receipt['contractAddress']
-print(f'\n\n Contract deployed at address: {contract_address}\n\n')
+print(cStrDivider_1, f'\n\n Contract deployed at address: {contract_address}\n\n', sep='\n')

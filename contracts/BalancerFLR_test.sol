@@ -56,11 +56,21 @@ contract BalancerFLR_test is IFlashLoanRecipient {
         emit logRFL(address(this), msg.sender, "logRFL 3");
         // approve for payback when execution finished
         //  init testing: return immediately (payback right away; req funds in this contract)
-        uint256 amountOwed = amounts[0] + feeAmounts[0];
+        //uint256 amountOwed = amounts[0] + feeAmounts[0];
         // IERC20(asset).approve(address(vault), amountOwed);
-        tokens[0].approve(address(vault), amountOwed);
+        //tokens[0].approve(address(vault), amountOwed);
         
-
+        // payback loan
+        uint256 amountOwed = amounts[0] + feeAmounts[0];
+        //tokens[0].approve(address(vault), amountOwed);
+        IERC20(tokens[0]).transfer(address(vault), amountOwed);
+        
+        // Approve the LendingPool contract allowance to *pull* the owed amount
+        // i.e. AAVE V2's way of repaying the flash loan
+        //for (uint i = 0; i < tokens.length; i++) {
+        //    uint amountOwing = amounts[i].add(feeAmounts[i]);
+        //    IERC20(tokens[i]).transfer(address(vault), amountOwing);
+        //}
     }
 
     function withdraw(uint256 amount) external onlyOwner {

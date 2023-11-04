@@ -16,11 +16,12 @@ from web3.contract import ConciseContract
 import time
 import env
 #------------------------------------------------------------#
-print('getting keys and setting globals ...')
-## SETTINGS ##
-abi_file = "../contracts/BalancerFLR.json"
-bin_file = "../contracts/BalancerFLR.bin"
-
+#------------------------------------------------------------#
+#print('getting keys and setting globals ...')
+### SETTINGS ##
+#abi_file = "../contracts/BalancerFLR.json"
+#bin_file = "../contracts/BalancerFLR.bin"
+#------------------------------------------------------------#
 sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
 assert 0 <= int(sel_chain) <= 1, 'Invalid entry, abort'
 (RPC_URL, CHAIN_ID) = (env.eth_main, env.eth_main_cid) if int(sel_chain) == 0 else (env.pc_main, env.pc_main_cid)
@@ -29,17 +30,18 @@ sel_send = input(f'\nSelect sender: (_event_listener: n/a)\n  0 = {env.sender_ad
 assert 0 <= int(sel_send) <= 1, 'Invalid entry, abort'
 (SENDER_ADDRESS, SENDER_SECRET) = (env.sender_address_3, env.sender_secret_3) if int(sel_send) == 0 else (env.sender_address_1, env.sender_secret_1)
 #------------------------------------------------------------#
-LST_CONTR_ARB_ADDR = [
-    "0x59012124c297757639e4ab9b9e875ec80a5c51da", # deployed eth main 102823_1550
-    "0x48af7d501bca526171b322ac2d8387a8cf085850", # deployed eth main 102823_2140
-    "0x0B3f73687A5F78ACbdEccF860cEd0d8A5630F806", # deployed pc main 103023_2128
-    "0xc2fa6dF341b18AE3c283CE3E7C0f1b4F5F6cabBb", # deployed pc main 110123_1953
-    "0x42b2dDF6cd1C4c269785a228D40307a1e0441c77", # deployed pc main 110323_1649
-    "0xF02e6E28E250073583766D77e161f67C21aEe388", # deployed pc main 110323_1715
-    "0xc3B031914Ef19E32859fbe72b52e1240335B60da", # deployed pc main 110323_1759
-    "0x4e24f4814306fd8cA4e63f342E8AF1675893c002", # deployed pc main 110323_1902 (TEST)
-    "0x8cC1fa4FA6aB21D25f07a69f8bBbCbEAE7AD150d", # deployed pc main 110323_1937 (TEST)
-]
+#LST_CONTR_ARB_ADDR = [
+#    "0x59012124c297757639e4ab9b9e875ec80a5c51da", # deployed eth main 102823_1550
+#    "0x48af7d501bca526171b322ac2d8387a8cf085850", # deployed eth main 102823_2140
+#    "0x0B3f73687A5F78ACbdEccF860cEd0d8A5630F806", # deployed pc main 103023_2128
+#    "0xc2fa6dF341b18AE3c283CE3E7C0f1b4F5F6cabBb", # deployed pc main 110123_1953
+#    "0x42b2dDF6cd1C4c269785a228D40307a1e0441c77", # deployed pc main 110323_1649
+#    "0xF02e6E28E250073583766D77e161f67C21aEe388", # deployed pc main 110323_1715
+#    "0xc3B031914Ef19E32859fbe72b52e1240335B60da", # deployed pc main 110323_1759
+#    "0x4e24f4814306fd8cA4e63f342E8AF1675893c002", # deployed pc main 110323_1902 (TEST)
+#    "0x8cC1fa4FA6aB21D25f07a69f8bBbCbEAE7AD150d", # deployed pc main 110323_1937 (TEST)
+#    "0x5605ca222d290dFf31C4174AbCDFadc7DED90915", # deployed pc main 110323_2301 (TEST)
+#]
 print(f'\nSelect arbitrage contract to use:')
 for i, v in enumerate(LST_CONTR_ARB_ADDR): print(' ',i, '=', v)
 idx = input('  > ')
