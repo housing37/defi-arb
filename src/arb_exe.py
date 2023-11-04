@@ -41,8 +41,10 @@ ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
 #------------------------------------------------------------#
 print('getting keys and setting globals ...')
 ## SETTINGS ##
-abi_file = "../contracts/BalancerFLR.json"
-bin_file = "../contracts/BalancerFLR.bin"
+#abi_file = "../contracts/BalancerFLR.json"
+#bin_file = "../contracts/BalancerFLR.bin"
+abi_file = "../contracts/BalancerFLR_test.json"
+bin_file = "../contracts/BalancerFLR_test.bin"
 LST_CONTR_ARB_ADDR = [
     "0x59012124c297757639e4ab9b9e875ec80a5c51da", # deployed eth main 102823_1550
     "0x48af7d501bca526171b322ac2d8387a8cf085850", # deployed eth main 102823_2140
@@ -51,6 +53,8 @@ LST_CONTR_ARB_ADDR = [
     "0x42b2dDF6cd1C4c269785a228D40307a1e0441c77", # deployed pc main 110323_1649
     "0xF02e6E28E250073583766D77e161f67C21aEe388", # deployed pc main 110323_1715
     "0xc3B031914Ef19E32859fbe72b52e1240335B60da", # deployed pc main 110323_1759
+    "0x4e24f4814306fd8cA4e63f342E8AF1675893c002", # deployed pc main 110323_1902 (TEST)
+    "0x8cC1fa4FA6aB21D25f07a69f8bBbCbEAE7AD150d", # deployed pc main 110323_1937 (TEST)
 ]
 #------------------------------------------------------------#
 sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
@@ -77,8 +81,11 @@ print(f'''\nINITIALIZING web3 ...
 W3 = Web3(HTTPProvider(RPC_URL))
 ACCOUNT = Account.from_key(SENDER_SECRET) # default
 #------------------------------------------------------------#
-print(f'\nreading abi file & initializing contract {CONTR_ARB_ADDR} ...')
-with open("../contracts/BalancerFLR.json", "r") as file: CONTR_ARB_ABI = file.read()
+print(f'\nreading contract abi & bytecode files ...')
+with open(bin_file, "r") as file: CONTR_ARB_ABI = '0x'+file.read()
+with open(abi_file, "r") as file: CONTR_ARB_ABI = file.read()
+#------------------------------------------------------------#
+print(f'\ninitializing contract {CONTR_ARB_ADDR} ...')
 CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
 CONTR_ARB = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI)
 #------------------------------------------------------------#
@@ -104,16 +111,14 @@ print(f'''\nSetting gas params ...
     MAX_FEE: {MAX_FEE}
     MAX_PRIOR_FEE: {MAX_PRIOR_FEE}''')
 #------------------------------------------------------------#
-print(f'\nreading contract abi & bytecode files ...')
-with open(abi_file, "r") as file: CONTR_ABI = file.read()
-with open(bin_file, "r") as file: CONTR_BYTES = '0x'+file.read()
 #------------------------------------------------------------#
     
 print(f'finalizing arb settings...')
 ROUTER_0 = ROUTER_UNISWAP_V3
 ROUTER_1 = ROUTER_UNISWAP_V3
 
-ADDR_LOAN = ADDR_WETH
+ADDR_LOAN_TOK = ADDR_WETH
+AMNT_LOAN_TOK = 1 * 10**18
 
 ADDR_IN_0 = ADDR_WBTC
 ADDR_OUT_MIN_0 = ADDR_USDT
@@ -240,8 +245,8 @@ def go_loan():
     
     # Define the array of IERC20 tokens for loan (w/ amounts)
 #    lst_tok_addr = [addr_path_0[0]]
-    lst_tok_addr = [ADDR_LOAN]
-    lst_tok_amnt = [amntIn_0]
+    lst_tok_addr = [ADDR_LOAN_TOK]
+    lst_tok_amnt = [AMNT_LOAN_TOK]
 
     print(f'setting function call...\n lst_tok_addr: {lst_tok_addr}\n lst_tok_amnt: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(

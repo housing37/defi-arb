@@ -6,8 +6,10 @@ import env
 #------------------------------------------------------------#
 print('getting keys and setting globals ...')
 ## SETTINGS ##
-abi_file = "../contracts/BalancerFLR.json"
-bin_file = "../contracts/BalancerFLR.bin"
+#abi_file = "../contracts/BalancerFLR.json"
+#bin_file = "../contracts/BalancerFLR.bin"
+abi_file = "../contracts/BalancerFLR_test.json"
+bin_file = "../contracts/BalancerFLR_test.bin"
 
 sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
 assert 0 <= int(sel_chain) <= 1, 'Invalid entry, abort'
