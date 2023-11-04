@@ -164,7 +164,7 @@ def go_loan():
     lst_tok_addr = [ADDR_LOAN_TOK] # tokens to receive loan
     lst_tok_amnt = [AMNT_LOAN_TOK] # amnt to receive
 
-    print(f'setting function call...\n lst_tok_addr: {lst_tok_addr}\n lst_tok_amnt: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
+    print(f'setting function call...\n loan tokens: {lst_tok_addr}\n loan amounts: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(
         lst_tok_addr,
         lst_tok_amnt,
