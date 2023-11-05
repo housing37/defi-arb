@@ -59,7 +59,7 @@ def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_',
 
     print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
     print(f'{chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())} ...')
-    [print(k, dict_all_symbs[k][0:5]) for k in dict_all_symbs.keys()]
+    [print(idx, k, v[0:5]) for idx, (k,v) in enumerate(dict_all_symbs.items())]
     print(f'... {chain_id} _ start from {t_symb} _ unique tokens found: {len(dict_all_symbs.keys())}')
     print(f'... NET_CALL_CNT: {NET_CALL_CNT} | ARB_OPP_CNT: {ARB_OPP_CNT}\n')
     return dict(dict_all_symbs)

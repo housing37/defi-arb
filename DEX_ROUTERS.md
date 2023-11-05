@@ -27,6 +27,8 @@
     DEX: pulseX
         addr: 0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02 // pulsex router_v1 
         addr: 0x165C3410fC91EF562C50559f7d2289fEbed552d9 // pulsex router_v2
+    
+    DEX: pulse-rate (found in arb_seercher logs, no research yet)
 
 ## Ethereum mainnet dex routers
     DEX: balancer (found in .py logs)
