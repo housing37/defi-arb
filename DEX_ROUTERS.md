@@ -9,22 +9,17 @@
         ProtocolFeesCollector: 0xce88686553686DA562CE7Cea497CE749DA109f9F
 
 ## PulseChain dex routers
-    pulsex router_v1 = "0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02"
-    pulsex router_v2 = "0x165C3410fC91EF562C50559f7d2289fEbed552d9"
+    DEX: 9inch (found through pc blockexplorer) _ 110423: uniswapV2 protocol YES confirmed
+     addr: 0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725 // i think
+     ref: https://www.9inch.io/
+     ref: https://9inch.gitbook.io/9inch-gitbook/features/contracts
+     ref: https://scan.pulsechain.com/address/0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725   
+        
+    DEX: pulseX
+        addr: 0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02 // pulsex router_v1 
+        addr: 0x165C3410fC91EF562C50559f7d2289fEbed552d9 // pulsex router_v2
 
 ## Ethereum mainnet dex routers
-    DEX: misc found in arb_searcher.py logs (no research yet)
-        addr: 0xcBAE5C3f8259181EB7E2309BC4c72fDF02dD56D8
-        addr: 0x03407772F5EBFB9B10Df007A2DD6FFf4EdE47B53
-        addr: 0x564C4529E12FB5a48AD609820D37D15800c1f539
-        addr: 0x696708Db871B77355d6C2bE7290B27CF0Bb9B24b
-    
-    DEX: safemoonswap (found in .py logs; no research yet)
-    
-    DEX: fraxswap (found in .py logs; no research yet)   
-
-    DEX: radioshack (found in .py logs; no research yet)
-
     DEX: balancer (found in .py logs)
      ref: https://docs.balancer.fi/reference/contracts/deployment-addresses/mainnet.html
      note: don't see 'router' address anywhere
@@ -36,19 +31,12 @@
         ref: https://bscscan.com/address/0xeb33cbbe6f1e699574f10606ed9a495a196476df#writeContract
      note: found discord and asked for support (https://discord.com/invite/UjTUyN6qhx)
 
-    DEX: shibaswap (found in .py logs)
-     note: found https://docs.shibatoken.com/shibaswap and https://shibaswap.com/#/
-        not sure which one is right
-     note: found discord and opened support request
-     note: found pdf on one of the sites above with 'MULTISIGADDRESSES' (i dunno)
-        ref: https://github.com/shytoshikusama/woofwoofpaper/raw/main/SHIBA_INU_WOOF_WOOF.pdf
-
-    DEX: verse (found in .py logs)
-        ref: https://docs.swapverse.exchange/ & https://twitter.com/Swapverse_)
-     note: can't find discord or list of contract addresses
-     addr: https://etherscan.io/token/0xeacadc656c9394fb09af25aebc0897fdffe484a1#code
-        found through .py log pairs (102923)
-
+    DEX: 9inch (found etherscan.io blockexplorer) _ 110423: uniswapV2 protocol NOT confirmed
+     addr: 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4 // i think
+     ref: https://www.9inch.io/
+     ref: https://9inch.gitbook.io/9inch-gitbook/features/contracts
+     ref: https://etherscan.io/token/0xFD8b9Ba4845fB38c779317eC134b298C064937a2
+     
     DEX: uniswap v3 (found in .py logs)
      addr: 0xE592427A0AEce92De3Edee1F18E0157C05861564 // SwapRouter
      ref: https://docs.uniswap.org/contracts/v3/reference/deployments
@@ -72,7 +60,6 @@
      ref: https://etherscan.io/address/0x5649B4DD00780e99Bab7Abb4A3d581Ea1aEB23D0#code
      note: found discord and asked for support: forward me to ask Q -> https://support.kyberswap.com/hc/en-us/requests/new
 
-
     DEX: pancakeswap (found in .py logs)
      addr: 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4 // ethereum: v3
      addr: 0x10ED43C718714eb63d5aA57B78B54704E256024E // ethereum: v2
@@ -93,3 +80,28 @@
         addr: 0xc5578194D457dcce3f272538D1ad52c68d1CE849 // sushiswap i dunno
         addr: 0x827179dD56d07A7eeA32e3873493835da2866976 // sushiswap 'RouteProcessor3'
         addr: 0x011E52E4E40CF9498c79273329E8827b21E2e581 // sushiswap 'SushiXSwap'
+
+    DEX: misc found in arb_searcher.py logs (no research yet)
+        addr: 0xcBAE5C3f8259181EB7E2309BC4c72fDF02dD56D8
+        addr: 0x03407772F5EBFB9B10Df007A2DD6FFf4EdE47B53
+        addr: 0x564C4529E12FB5a48AD609820D37D15800c1f539
+        addr: 0x696708Db871B77355d6C2bE7290B27CF0Bb9B24b
+    
+    DEX: safemoonswap (found in .py logs; no research yet)
+    
+    DEX: fraxswap (found in .py logs; no research yet)   
+
+    DEX: radioshack (found in .py logs; no research yet)
+    
+    DEX: shibaswap (found in .py logs)
+     note: found https://docs.shibatoken.com/shibaswap and https://shibaswap.com/#/
+        not sure which one is right
+     note: found discord and opened support request
+     note: found pdf on one of the sites above with 'MULTISIGADDRESSES' (i dunno)
+        ref: https://github.com/shytoshikusama/woofwoofpaper/raw/main/SHIBA_INU_WOOF_WOOF.pdf
+
+    DEX: verse (found in .py logs)
+        ref: https://docs.swapverse.exchange/ & https://twitter.com/Swapverse_)
+     note: can't find discord or list of contract addresses
+     addr: https://etherscan.io/token/0xeacadc656c9394fb09af25aebc0897fdffe484a1#code
+        found through .py log pairs (102923)
