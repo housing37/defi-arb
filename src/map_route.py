@@ -82,6 +82,7 @@ def get_lps(t_addr='nil_', t_symb='nil_', t_name='nil_', eth_main=False, d_print
     lst_t_pair_toks = get_pairs_lst(t_addr, t_symb, eth_main, d_print)
     
     if d_print: print('', cStrDivider, f'Print pairs for T | {t_symb}: {t_addr} _ eth_main: {eth_main} _ {get_time_now()}', cStrDivider, sep='\n')
+    lst_t_pair_toks = sorted(lst_t_pair_toks, reverse=True, key=lambda x: x['liq_usd'])
     if d_print: [print(f"pair:{d['pair_addr']} _ {d['tok_type']}:{d['tok_addr']} ({d['tok_symb']}){' ' * (6 - len(d['tok_symb']))}_ liq: ${d['liq_usd']:,.2f} | pr: ${d['price_usd']} | pr_nat: {d['price_nat']} _ {d['chain_id']} ({d['dex_id']}|{d['dex_label']})") for d in lst_t_pair_toks]
     
     # TODO: send_to_db(lst_t_pair_toks)
@@ -140,16 +141,28 @@ def go_main(run_default=True):
     addr_pdai = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
     ADDR_WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
     ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    
+    ADDR_WHETH = '0xDe0220b69CE3e855a0124433A8E8D093f53A6bE4'
     #========================================================#
 
-    get_lps(t_addr=ADDR_USDC,
-            t_symb='USDC',
-            eth_main=True,
-            d_print=True)
     get_lps(t_addr=ADDR_WETH,
             t_symb='WETH',
             eth_main=True,
             d_print=True)
+    get_lps(t_addr=ADDR_USDC,
+            t_symb='USDC',
+            eth_main=True,
+            d_print=True)
+
+    get_lps(t_addr=addr_wpls,
+            t_symb='WPLS',
+            eth_main=False,
+            d_print=True)
+    get_lps(t_addr=ADDR_WHETH,
+            t_symb='WHETH',
+            eth_main=False,
+            d_print=True)
+            
     get_lps(t_addr=addr_pdai,
             t_symb='pDAI',
             d_print=True)

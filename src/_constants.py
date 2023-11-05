@@ -19,6 +19,7 @@ ROUTER_9INCH_PC = '0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725'
 #------------------------------------------------------------#
 #   TOKEN ADDRESSES
 #------------------------------------------------------------#
+# ethereum mainnet
 ADDR_rETH = '0xae78736Cd615f374D3085123A210448E74Fc6393'
 ADDR_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
 
@@ -29,6 +30,9 @@ ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 
 ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
 
+# pulsechain
+ADDR_ROB = '0x1c2766F5949A4aA5d4cf0439067051135ffc1b28'
+ADDR_WPLS = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
 #------------------------------------------------------------#
 print('getting keys and setting globals ...')
 ## SETTINGS ##
