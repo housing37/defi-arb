@@ -9,6 +9,13 @@
         ProtocolFeesCollector: 0xce88686553686DA562CE7Cea497CE749DA109f9F
             - note: this addr is called by vault addr during loan process
             - note_2: this addr was created by 0xBA12222222228d8Ba445958a75a0704d566BF2C8
+            
+        max amnt: 1 USDC (fails on loan for just 1 USDC)    
+        ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+        vault: 0xba12222222228d8ba445958a75a0704d566bf2c8
+        ProtocolFeesCollector: 0xce88686553686DA562CE7Cea497CE749DA109f9F
+            - note: fails on call to '0xd877845c' == 'getFlashLoanFeePercentage'
+                 (on PC -> for USDC, but indeed succeeds for WETH)
 
 ## PulseChain dex routers
     DEX: 9inch (found through pc blockexplorer) _ 110423: uniswapV2 protocol YES confirmed

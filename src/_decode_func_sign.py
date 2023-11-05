@@ -23,7 +23,7 @@ CONTR_ARB_ADDR = W3.to_checksum_address(CONTR_ARB_ADDR)
 print(f'reading abi file for contract: {CONTR_ARB_ADDR} ...')
 with open(abi_file, "r") as file: CONTR_ARB_ABI = file.read()
 
-# input hexadecimal data (ex: hex_data = '0xd877845c')
+# input hexadecimal data (ex: '0xd877845c' == 'getFlashLoanFeePercentage')
 print('\n enter hex value function signature obtained from block explorer... (ex: "0xd877845c")')
 hex_data = input(' > ')
 
