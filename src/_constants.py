@@ -5,9 +5,20 @@
 ## STATIC CONSTANTS
 AMNT_MAX = 115792089237316195423570985008687907853269984665640564039457584007913129639935 # uint256.max
 
+#------------------------------------------------------------#
+#   DEX ROUTERS
+#------------------------------------------------------------#
+# ethereum mainnet dex router support
 ROUTER_UNISWAP_V3 = '0xE592427A0AEce92De3Edee1F18E0157C05861564'
 ROUTER_PANCAKESWAP_V3 = '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4'
+ROUTER_9INCH_EM = '0xFD8b9Ba4845fB38c779317eC134b298C064937a2'
 
+# pulsechain dex router support
+ROUTER_9INCH_PC = '0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725'
+
+#------------------------------------------------------------#
+#   TOKEN ADDRESSES
+#------------------------------------------------------------#
 ADDR_rETH = '0xae78736Cd615f374D3085123A210448E74Fc6393'
 ADDR_DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F'
 
