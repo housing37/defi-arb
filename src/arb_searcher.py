@@ -53,7 +53,7 @@ def exe_dexscreener_request(url='nil_url'):
         
 def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
     global NET_CALL_CNT
-    if d_print: print('', cStrDivider, f'Print symbols for start TOKEN | {t_symb}: {t_addr} _ [{get_time_now()}]', cStrDivider, sep='\n')
+    if d_print: print('', cStrDivider, f'Searching pairs recursively _ start T|{t_symb}: {t_addr} _ [{get_time_now()}]', cStrDivider, sep='\n')
     dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
     #dict_all_symbs = scrape_dex_recurs_1(t_addr, t_symb, chain_id, {}, plog=False)
 
@@ -289,11 +289,12 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         #dex_ok = not (dex_id == 'balancer' or lst_symbs[3] == 'balancer')
                         
                         # check for usd price diff based on max liquidity
-                        diff_usd_max_liq = diff_perc_max_liq = log_diff_liq = -1
+                        diff_usd_low_liq = diff_perc_low_liq = log_diff_liq = -1
                         if liquid < float(price_usd):
-                            diff_usd_max_liq = liquid - quote[3]
-                            diff_perc_max_liq = abs(1 - (float(quote[3]) / liquid)) * 100
-                            log_diff_liq = f'${diff_usd_max_liq:,.2f} _ {diff_perc_max_liq:,.2f}% diff'
+                            low_liq_usd = liquid - quote[3] if liquid > quote[3] else quote[3] - liquid
+                            diff_usd_low_liq = low_liq_usd * (diff_perc / 100)
+                            diff_perc_low_liq = diff_perc
+                            log_diff_liq = f'${diff_usd_low_liq:,.2f} _ {diff_perc_low_liq:,.2f}% diff'
                         
                         if dex_vers_ok and base_addr_ok and quote_addr_ok and usd_diff_ok:
                             ARB_OPP_CNT += 1
@@ -309,7 +310,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
                             print(f'\n  PRICE-DIFF-NAT = {log_diff_nat}')
-                            print(f'  PRICE-DIFF-USD = {log_diff_liq} (max liquidity based price)')
+                            print(f'  PRICE-DIFF-USD = {log_diff_liq} from lowest liquidity based price')
                             print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff _ {lst_symbs[3]} <-> {dex_id}\n')
                             
 
