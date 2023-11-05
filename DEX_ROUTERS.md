@@ -1,6 +1,13 @@
 # dex routers
     list of dex routers to interface with for arb
 
+## Balancer dex 
+    PC -> balancer max loan amnts (found in sol logs `balanceOf(address)`: `0x70a08231`)
+        max amnt: 114,983,659.41104437 WETH (greater fails w/ "Fail with revert message: 'BAL#528'")
+        ADDR_WETH: 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+        vault: 0xba12222222228d8ba445958a75a0704d566bf2c8
+        ProtocolFeesCollector: 0xce88686553686DA562CE7Cea497CE749DA109f9F
+
 ## PulseChain dex routers
     pulsex router_v1 = "0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02"
     pulsex router_v2 = "0x165C3410fC91EF562C50559f7d2289fEbed552d9"

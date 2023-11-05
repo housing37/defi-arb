@@ -39,6 +39,7 @@ for i, v in enumerate(LST_CONTR_ARB_ADDR): print(' ',i, '=', v)
 idx = input('  > ')
 assert 0 <= int(idx) < len(LST_CONTR_ARB_ADDR), 'Invalid input, aborting...\n'
 CONTR_ARB_ADDR = str(LST_CONTR_ARB_ADDR[int(idx)])
+print(f'  selected {CONTR_ARB_ADDR}')
 #------------------------------------------------------------#
 print(f'''\nINITIALIZING web3 ...
     RPC: {RPC_URL}
@@ -67,7 +68,7 @@ if int(sel_chain) == 0:
 else:
     # pulsechain main net (update_103123)
     GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
-    GAS_PRICE = W3.to_wei('0.0005', 'ether') # price to pay for each unit of gas (optional?)
+    GAS_PRICE = W3.to_wei('0.0005', 'ether') # price to pay for each unit of gas ('gasPrice' param fails on PC)
     MAX_FEE = W3.to_wei('0.001', 'ether') # max fee per gas unit to pay (optional?)
     MAX_PRIOR_FEE_RATIO = 1.0
     MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * MAX_PRIOR_FEE_RATIO) # max fee per gas unit to pay for priority (faster) (optional)
@@ -86,7 +87,7 @@ ROUTER_1 = ROUTER_UNISWAP_V3
 
 #ADDR_LOAN_TOK = ADDR_USDC # house_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # house_110423: WETH success test balancer loan (pc)
-AMNT_LOAN_TOK = 1 * 10**18
+AMNT_LOAN_TOK = 114983659 * 10**18 # max pc -> balancer loan (114983659 WETH)
 
 ADDR_IN_0 = ADDR_WBTC
 ADDR_OUT_MIN_0 = ADDR_USDT
@@ -141,14 +142,14 @@ def tx_sign_send_wait(tx, wait_rec=True):
 def go_loan():
     global W3, ACCOUNT, LST_ARB, CHAIN_ID, RPC_URL, CONTR_ARB
     print(f'setting arb tx params data... [{get_time_now()}]')
-    print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
+    #print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
     addr_arb_contr = CONTR_ARB_ADDR
     
     router_0 = LST_ARB[0][0]
     router_1 = LST_ARB[0][1]
 
-    addr_path_0 = LST_ARB[1][0] # [ADDR_DAI, ADDR_WBTC]
-    addr_path_1 = LST_ARB[1][1] # [ADDR_WBTC, ADDR_rETH]
+    addr_path_0 = LST_ARB[1][0] # ie. [ADDR_DAI, ADDR_WBTC]
+    addr_path_1 = LST_ARB[1][1] # ie. [ADDR_WBTC, ADDR_rETH]
 
     amntIn_0 = W3.toWei(LST_ARB[2][0], 'ether')
     amntOutMin_1 = W3.toWei(LST_ARB[2][1], 'ether')
@@ -164,7 +165,7 @@ def go_loan():
     lst_tok_addr = [ADDR_LOAN_TOK] # tokens to receive loan
     lst_tok_amnt = [AMNT_LOAN_TOK] # amnt to receive
 
-    print(f'setting function call...\n loan tokens: {lst_tok_addr}\n loan amounts: {lst_tok_amnt}\n encoded_data: {encoded_data.hex()}\n')
+    print(f'setting function call...\n loan tokens: {lst_tok_addr}\n loan amounts: {[f"{(x / 10**18):,}" for x in lst_tok_amnt]} ({AMNT_LOAN_TOK})\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(
         lst_tok_addr,
         lst_tok_amnt,
@@ -334,7 +335,7 @@ def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=T
     # Estimate the gas cost for the transaction
     #gas_estimate = buy_tx.estimate_gas()
     gas_limit = GAS_LIMIT # max gas units to use for tx (required)
-    gas_price = GAS_PRICE # price to pay for each unit of gas (optional?)
+    gas_price = GAS_PRICE # price to pay for each unit of gas (optional?) # 'gasPrice' fails on PC w/ unknown args error
     max_fee = MAX_FEE # max fee per gas unit to pay (optional?)
     max_prior_fee = MAX_PRIOR_FEE # max fee per gas unit to pay for priority (faster) (optional)
     #max_prior_fee = int(W3.eth.max_priority_fee * mpf_ratio) # max fee per gas unit to pay for priority (faster) (optional)
@@ -343,6 +344,7 @@ def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=T
     if min_params:
         return [{'gas':gas_limit}]
     elif max_params:
+        # note_110423: 'gasPrice' fails on PC w/ unknown args error
         #return [{'gas':gas_limit}, {'gasPrice': gas_price}, {'maxFeePerGas': max_fee}, {'maxPriorityFeePerGas': max_prior_fee}]
         return [{'gas':gas_limit}, {'maxFeePerGas': max_fee}, {'maxPriorityFeePerGas': max_prior_fee}]
     elif def_params:
@@ -350,18 +352,18 @@ def get_gas_params_lst(rpc_url, min_params=False, max_params=False, def_params=T
     else:
         return [{'gas':gas_limit}]
 
-def exe_GET_request(url='nil_url'):
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json() # data
-        else:
-            print(f"Request failed with status code {response.status_code}\n returning empty list")
-            return []
-    except requests.exceptions.RequestException as e:
-        # Handle request exceptions
-        print_except(e, debugLvl=0)
-        return -1
+#def exe_GET_request(url='nil_url'):
+#    try:
+#        response = requests.get(url)
+#        if response.status_code == 200:
+#            return response.json() # data
+#        else:
+#            print(f"Request failed with status code {response.status_code}\n returning empty list")
+#            return []
+#    except requests.exceptions.RequestException as e:
+#        # Handle request exceptions
+#        print_except(e, debugLvl=0)
+#        return -1
         
 #ref: https://stackoverflow.com/a/1278740/2298002
 def print_except(e, debugLvl=0):
