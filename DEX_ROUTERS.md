@@ -31,7 +31,7 @@
         ref: https://bscscan.com/address/0xeb33cbbe6f1e699574f10606ed9a495a196476df#writeContract
      note: found discord and asked for support (https://discord.com/invite/UjTUyN6qhx)
 
-    DEX: 9inch (found etherscan.io blockexplorer) _ 110423: uniswapV2 protocol NOT confirmed
+    DEX: 9inch (found etherscan.io blockexplorer) _ 110423: uniswapV2 protocol MAYBE confirmed
      addr: 0x13f4EA83D0bd40E75C8222255bc855a974568Dd4 // i think
      ref: https://www.9inch.io/
      ref: https://9inch.gitbook.io/9inch-gitbook/features/contracts
