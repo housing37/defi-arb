@@ -289,13 +289,13 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         #dex_ok = not (dex_id == 'balancer' or lst_symbs[3] == 'balancer')
                         
                         # check for usd price diff based on max liquidity
-                        diff_usd_low_liq = diff_perc_low_liq = log_diff_liq = low_liq = -1
+                        diff_usd_low_liq = diff_perc_low_liq = log_low_liq_prof = low_liq = -1
                         if liquid < float(price_usd):
                             low_liq = liquid if liquid < quote[3] else quote[3]
-                            low_liq_usd = liquid - quote[3] if liquid > quote[3] else quote[3] - liquid
-                            diff_usd_low_liq = low_liq_usd * (diff_perc / 100)
+                            low_liq_usd = liquid if liquid < quote[3] else quote[3]
+                            diff_usd_low_liq = (low_liq_usd * (diff_perc / 100))
                             diff_perc_low_liq = diff_perc
-                            log_diff_liq = f'${diff_usd_low_liq:,.2f} _ {diff_perc_low_liq:,.2f}% diff'
+                            log_low_liq_prof = f'${diff_usd_low_liq:,.2f} | {diff_perc_low_liq:,.2f}% prof @ lowest liq price _ ${low_liq_usd:,.2f}'
                         
                         if dex_vers_ok and base_addr_ok and quote_addr_ok and usd_diff_ok:
                             ARB_OPP_CNT += 1
@@ -310,10 +310,9 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                             print(f'   quote_tok | {quote_tok_symb}: {quote_tok_addr} _ price: ${float(price_usd):,.2f} ({float(price_nat)} {quote_tok_symb})')
                             print(f'   pair_addr: {pair_addr}')
                             print(f'   LIQUIDITY: ${liquid:,.2f}')
-                            print(f'\n  PRICE-DIFF-NAT = {log_diff_nat}')
-                            print(f'  PRICE-DIFF-USD = {log_diff_liq} from lowest liquidity price _ ${low_liq:,.2f}')
-                            print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} _ {diff_perc:,.2f}% diff from market prices _ {lst_symbs[3]} <-> {dex_id}\n')
-                            
+                            print(f'\n  PRICE-DIFF-NAT = {log_diff_nat} @ curr market prices _ {lst_symbs[3]} <-> {dex_id}')
+                            print(f'  PRICE-DIFF-USD = {log_low_liq_prof}')
+                            print(f'\n  PRICE-DIFF-USD = ${diff_usd:,.2f} | {diff_perc:,.2f}% prof @ curr market prices _ {lst_symbs[3]} <-> {dex_id}\n')
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
