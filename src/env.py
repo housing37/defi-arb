@@ -1,8 +1,7 @@
 __fname = 'env'
 __filename = __fname + '.py'
 cStrDivider = '#================================================================#'
-print('', cStrDivider, f'START _ {__filename}', cStrDivider, sep='\n')
-print(f'GO {__filename} -> starting IMPORTs and globals decleration')
+print('', cStrDivider, f'GO _ {__filename} -> starting IMPORTs & declaring globals', cStrDivider, sep='\n')
 #============================================================================#
 ## log paths (should use same 'log' folder as access & error logs from nginx config)
 #GLOBAL_PATH_DEV_LOGS = "../logs/dev.log"

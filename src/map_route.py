@@ -1,8 +1,7 @@
 __fname = 'map_route' # 102423: direct copy of 'atropa-kb-priv/_src/map_route/map_route.py'
 __filename = __fname + '.py'
 cStrDivider = '#================================================================#'
-print('', cStrDivider, f'START _ {__filename}', cStrDivider, sep='\n')
-print(f'GO {__filename} -> starting IMPORTs and globals decleration')
+print('', cStrDivider, f'GO _ {__filename} -> starting IMPORTs & declaring globals', cStrDivider, sep='\n')
 
 #------------------------------------------------------------#
 #   IMPORTS                                                  #

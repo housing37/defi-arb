@@ -7,6 +7,8 @@
         ADDR_WETH: 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
         vault: 0xba12222222228d8ba445958a75a0704d566bf2c8
         ProtocolFeesCollector: 0xce88686553686DA562CE7Cea497CE749DA109f9F
+            - note: this addr is called by vault addr during loan process
+            - note_2: this addr was created by 0xBA12222222228d8Ba445958a75a0704d566BF2C8
 
 ## PulseChain dex routers
     DEX: 9inch (found through pc blockexplorer) _ 110423: uniswapV2 protocol YES confirmed

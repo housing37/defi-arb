@@ -1,8 +1,7 @@
 __fname = 'arb_searcher'
 __filename = __fname + '.py'
 cStrDivider = '#================================================================#'
-print('', cStrDivider, f'START _ {__filename}', cStrDivider, sep='\n')
-print(f'GO {__filename} -> starting IMPORTs and globals decleration')
+print('', cStrDivider, f'GO _ {__filename} -> starting IMPORTs & declaring globals', cStrDivider, sep='\n')
 
 #------------------------------------------------------------#
 #   IMPORTS                                                  #
