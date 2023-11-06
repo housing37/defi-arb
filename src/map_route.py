@@ -154,6 +154,8 @@ def go_main(run_default=True):
             eth_main=True,
             d_print=True)
 
+    # *WARNING* 'WPLS' does not include pair: l0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS)
+    print('\n\n', cStrDivider, "*** WARNING *** 'WPLS' does not include pair: l0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS)", cStrDivider, sep='\n')
     get_lps(t_addr=addr_wpls,
             t_symb='WPLS',
             eth_main=False,
