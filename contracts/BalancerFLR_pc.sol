@@ -76,13 +76,12 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         emit logRFL(address(this), msg.sender, "logRFL 1");
         (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
         
+        // quote-to-execute slippage %
         uint256 quote_exe_slip_perc = 2;
         
         // (1) get loan in WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
-        tokens[0]; // WETH
-        amounts[0]; // max 114983659 from balancer pc
-        uint256 weth_bal = tokens[0].balanceOf(address(this))
-        require(weth_bal == amounts[0], "err: loan transfer failed")
+        uint256 weth_bal = tokens[0].balanceOf(address(this)) // max 114983659 WETH from pc->balancer-vault
+        require(weth_bal >= amounts[0], "err: loan transfer failed")
         
         
         // (2) arb setup (WETH -> WPLS) _ note: plsx_rtr_v2 w/ 1000x more liq than plsx_rtr_v1
