@@ -19,6 +19,7 @@ interface IUniswapV2 {
         address to,
         uint deadline
     ) external returns (uint[] memory amounts);
+    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
 contract BalancerFLR_pc is IFlashLoanRecipient {
@@ -68,14 +69,14 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         //  max loan = 114983659 WETH from pc->balancer-vault
         (address[] memory routers, address[][] memory paths) = abi.decode(userData, (address[], address[][]));
         require(routers.length == paths.length, 'err: router / path mismatch :/');
-        require(tokens[0].balanceOf(address(this)) >= amounts[0], "err: loan transfer failed :?")
+        require(tokens[0].balanceOf(address(this)) >= amounts[0], "err: loan transfer failed :?");
 
         // (2) arb setup -> (3) arb swap -> (4) arb tear-down _ (weth->wpls->...->wpls->weth)
         //  (2) [weth, wpls] _ plsx_rtr_v2 _ amounts[0]
         //  (3) [wpls, rob] _ 9inch_rtr _ amntOut
         //  (3) [rob, wpls] _ plsx_rtr_v2 _ amntOut
         //  (4) [wpls, weth] _ plsx_rtr_v2 _ amntOut
-        uint256 amntOut = amounts[0]
+        uint256 amntOut = amounts[0];
         for (uint256 i = 0; i < routers.length; i++) {
             amntOut = swap_v2_wrap(paths[i], routers[i], amntOut);
         }
@@ -83,6 +84,7 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         // (5) payback WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
         //  note: no 'token.approve(,)' needed since this contract is transfering its own tokens
         uint256 amountOwed = amounts[0] + feeAmounts[0]; // note_110523: no fee on pc->balancer
+        require(tokens[0].balanceOf(address(this)) >= amountOwed, "err: arb failed payback QQ");
         IERC20(tokens[0]).transfer(address(vault), amountOwed);
     }
     
@@ -143,3 +145,4 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         tok.transfer(to, amount);
     }
 }
+

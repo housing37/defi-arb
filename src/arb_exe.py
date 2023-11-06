@@ -83,12 +83,16 @@ print(f'''\nSetting gas params ...
 print(f'finalizing arb settings...')
 #ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
-AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
+#AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
+AMNT_LOAN_TOK =  20000000 * 10**18 # max pc->balancer loan (114983659 WETH)
 
 LST_ARB_KEYS = [    ['ROUTER',          ['PATH_0', 'PATH_n']]]
 LST_ARB = [ [ROUTER_pulsex_router02_v2, [ADDR_WETH, ADDR_WPLS]],
-            [ROUTER_9INCH_PC,           [ADDR_WPLS, ADDR_ROB]],
-            [ROUTER_pulsex_router02_v2, [ADDR_ROB, ADDR_WPLS]],
+
+            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_ROB]], # arb_search
+            [ROUTER_9INCH_PC,           [ADDR_ROB, ADDR_WHETH]], # arb_search
+            [ROUTER_pulsex_router02_v2, [ADDR_WHETH, ADDR_WPLS]], # map_route
+            
             [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_WETH]]]
 LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
@@ -160,8 +164,8 @@ def go_loan():
     lst_tok_addr = [ADDR_LOAN_TOK] # tokens to receive loan
     lst_tok_amnt = [AMNT_LOAN_TOK] # amnt to receive
     
-    routers = [LST_ARB[i][0] for i in LST_ARB]
-    paths = [LST_ARB[i][1] for i in LST_ARB]
+    routers = [l[0] for l in LST_ARB]
+    paths = [l[1] for l in LST_ARB]
     data_to_encode = [routers, paths]
     encoded_data = eth_abi.encode_abi(('address[]', 'address[][]'), data_to_encode)
 

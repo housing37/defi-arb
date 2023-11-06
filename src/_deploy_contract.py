@@ -7,13 +7,6 @@ import pprint
 from attributedict.collections import AttributeDict # tx_receipt requirement
 from _constants import *
 #------------------------------------------------------------#
-#print('getting keys and setting globals ...')
-### SETTINGS ##
-##abi_file = "../contracts/BalancerFLR.json"
-##bin_file = "../contracts/BalancerFLR.bin"
-#abi_file = "../contracts/BalancerFLR_test.json"
-#bin_file = "../contracts/BalancerFLR_test.bin"
-#------------------------------------------------------------#
 sel_chain = input('\nSelect chain:\n  0 = ethereum mainnet\n  1 = pulsechain mainnet\n  > ')
 assert 0 <= int(sel_chain) <= 1, 'Invalid entry, abort'
 (RPC_URL, CHAIN_ID) = (env.eth_main, env.eth_main_cid) if int(sel_chain) == 0 else (env.pc_main, env.pc_main_cid)
@@ -151,5 +144,4 @@ tx_receipt = W3.eth.waitForTransactionReceipt(tx_hash)
 tx_receipt = AttributeDict(tx_receipt) # import required
 tx_rc_print = pprint.PrettyPrinter().pformat(tx_receipt)
 print(cStrDivider_1, f'RECEIPT:\n {tx_rc_print}', sep='\n')
-contract_address = receipt['contractAddress']
-print(cStrDivider_1, f'\n\n Contract deployed at address: {contract_address}\n\n', sep='\n')
+print(cStrDivider_1, f"\n\n Contract deployed at address: {tx_receipt['contractAddress']}\n\n", sep='\n')
