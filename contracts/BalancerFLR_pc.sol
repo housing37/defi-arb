@@ -80,30 +80,31 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         uint256 quote_exe_slip_perc = 2;
         
         // (1) get loan in WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
-        uint256 weth_bal = tokens[0].balanceOf(address(this)) // max 114983659 WETH from pc->balancer-vault
+        uint256 weth_bal = tokens[0].balanceOf(address(this)) // max loan = 114983659 WETH from pc->balancer-vault
         require(weth_bal >= amounts[0], "err: loan transfer failed")
         
         
         // (2) arb setup (WETH -> WPLS) _ note: plsx_rtr_v2 w/ 1000x more liq than plsx_rtr_v1
-        // weth -> wpls (on pulsex_v2)
+        // weth -> wpls (plsx_rtr_v2)
         amntOut = swap_v2_wrap([weth, wpls], plsx_rtr_v2, amounts[0], quote_exe_slip_perc);
         
         
         // (3) arb swap (WPLS -> ... -> WPLS)
-        // wpls -> rob (on 9inch)
+        // wpls -> rob (9inch_rtr)
         amntOut = swap_v2_wrap([wpls, rob], 9inch_rtr, amntOut, quote_exe_slip_perc);
             
-        // rob -> wpls (on pulsex_v2)
+        // rob -> wpls (plsx_rtr_v2)
         amntOut = swap_v2_wrap([rob, wpls], plsx_rtr_v2, amntOut, quote_exe_slip_perc);
         
         
         // (4) arb tear-down (WPLS -> WETH) _ note: plsx_rtr_v2 w/ 1000x more liq than plsx_rtr_v1
+        // wpls -> weth (plsx_rtr_v2)
         amntOut = swap_v2_wrap([wpls, weth], plsx_rtr_v2, amntOut, quote_exe_slip_perc);
         
         
         // (5) payback WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
         //  note: no 'token.approve(,)' needed since this contract is transfering its own tokens
-        uint256 amountOwed = amounts[0] + feeAmounts[0]; // house_110523: on fee on pc
+        uint256 amountOwed = amounts[0] + feeAmounts[0]; // house_110523: no fee on pc->balancer
         IERC20(tokens[0]).transfer(address(vault), amountOwed);
     }
     
