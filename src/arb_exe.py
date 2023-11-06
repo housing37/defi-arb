@@ -16,6 +16,7 @@ from ethereum.abi import encode_abi # pip install ethereum
 import env
 from _constants import *
 import eth_abi
+#from web3.exceptions import ContractLogicError
 #import inspect # this_funcname = inspect.stack()[0].function
 #parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #sys.path.append(parent_dir) # import from parent dir of this file
@@ -75,7 +76,7 @@ else:
 print(f'''\nSetting gas params ...
     GAS_LIMIT: {GAS_LIMIT}
     GAS_PRICE: {GAS_PRICE} *'gasPrice' param fails on PC
-    MAX_FEE: {MAX_FEE}
+    MAX_FEE: {MAX_FEE} ({MAX_FEE / 10**18} wei)
     MAX_PRIOR_FEE: {MAX_PRIOR_FEE}''')
 #------------------------------------------------------------#
 #------------------------------------------------------------#
@@ -84,46 +85,18 @@ print(f'finalizing arb settings...')
 #ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
 #AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
-AMNT_LOAN_TOK =  10_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
+AMNT_LOAN_TOK =  14_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
 
 LST_ARB_KEYS = [    ['ROUTER',          ['PATH_0', 'PATH_n']]]
 LST_ARB = [ [ROUTER_pulsex_router02_v2, [ADDR_WETH, ADDR_WPLS]],
 
-            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_PLSX]], # map_route
-            [ROUTER_pulsex_router02_v2, [ADDR_PLSX, ADDR_WBTCp]], # arb_search
-            [ROUTER_9INCH_PC,           [ADDR_WBTCp, ADDR_9INCH]], # arb_search
-            [ROUTER_9INCH_PC,           [ADDR_9INCH, ADDR_WPLS]], # map_route
+            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_WHETH]], # map_route
+            [ROUTER_pulsex_router02_v2, [ADDR_WHETH, ADDR_ROB]], # arb_search
+            [ROUTER_9INCH_PC,           [ADDR_ROB, ADDR_WPLS]], # arb_search
+            #[ROUTER_9INCH_PC,           [ADDR_9INCH, ADDR_WPLS]], # map_route
             
             [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_WETH]]]
 LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
-
-## ethereum
-#ROUTER_0 = ROUTER_UNISWAP_V3
-#ROUTER_1 = ROUTER_UNISWAP_V3
-##ADDR_IN_0 = ADDR_WBTC
-##ADDR_OUT_MIN_0 = ADDR_USDT
-##ADDR_IN_1 = ADDR_USDT
-##ADDR_OUT_MIN_1 = ADDR_WBTC
-#
-## ethereum
-#ADDR_IN_0 = ADDR_ROB
-#ADDR_OUT_MIN_0 = ADDR_USDT
-#ADDR_IN_1 = ADDR_USDT
-#ADDR_OUT_MIN_1 = ADDR_WBTC
-#
-#AMNT_IN_0 = '19.1442'
-#AMNT_OUT_MIN_1 = '19.1909'
-#LST_ARB_KEYS = [
-#        ['ROUTER_0', 'ROUTER_1'],
-#        [['ADDR_IN_0', 'ADDR_OUT_MIN_0'], ['ADDR_IN_1', 'ADDR_OUT_MIN_1']],
-#        ['AMNT_IN_0', 'AMNT_OUT_MIN_1']
-#    ]
-#LST_ARB = [
-#        [ROUTER_0, ROUTER_1],
-#        [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
-#        [AMNT_IN_0, AMNT_OUT_MIN_1]
-#    ]
-#LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -150,7 +123,7 @@ def tx_sign_send_wait(tx, wait_rec=True):
             print(f"[{get_time_now()}] _ SUCCESS! tx mined\n tx_hash: {tx_hash.hex()}", cStrDivider_1, sep='\n')
             print(cStrDivider_1, f'TRANSACTION RECEIPT:\n  {tx_rc_print}', cStrDivider_1, sep='\n')
         else:
-            print(cStrDivider, cStrDivider, f"\n[{get_time_now()}] _ *ERROR* _ status = {tx_receipt['status']} _ 'tx_sign_send_wait' execution failed...\n tx_hash: {tx_hash.hex()}\n TRANSACTION RECEIPT:\n  {tx_rc_print}\n", cStrDivider, cStrDivider, sep='\n')
+            print(cStrDivider, cStrDivider, f"\n[{get_time_now()}] _ *ERROR* _ status = {tx_receipt['status']} _ 'tx_sign_send_wait' execution FAILED...\n tx_hash: {tx_hash.hex()}\n TRANSACTION RECEIPT:\n  {tx_rc_print}\n", cStrDivider, cStrDivider, sep='\n')
         return tx_hash, tx_receipt, wait_rec
     return tx_hash, {}, wait_rec
     # Once the transaction is mined, you have successfully called the `makeFlashLoan` function with the `userData` parameter in your Solidity contract
@@ -201,6 +174,19 @@ def go_loan():
     
     print(f'\nsign, send, and wait for receipt... [{get_time_now()}]')
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(data, wait_rec=True)
+        
+    # Retrieve the event logs
+    logs = contract.events.ErrorOccurred().processReceipt(txn_receipt)
+    if logs:
+        error_message = logs[0].args.errorMessage
+        print("\n\nTransaction failed with custom error message:", error_message, "\n\n")
+        
+#    try:
+#        print(f'\nsign, send, and wait for receipt... [{get_time_now()}]')
+#        tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(data, wait_rec=True)
+#    except ContractLogicError as e:
+#        error_message = str(e)
+#        print("\n\nTransaction failed with error message:", error_message, "\n\n")
 
 def go_transfer():
     global CHAIN_ID, RPC_URL

@@ -14,6 +14,8 @@ import env
 print('\nsetting globals...')
 abi_file = "../contracts/Balancer_0xce88.json"
 CONTR_ARB_ADDR = '0xce88686553686da562ce7cea497ce749da109f9f'
+#abi_file = "../contracts/BalancerFLR_pc.json"
+#CONTR_ARB_ADDR = '0x302CC7e8ffc8361c84b21450bAB7e018E41359c3'
 
 print('initializing web3...')
 RPC_URL = env.pc_main
@@ -30,6 +32,8 @@ hex_data = input(' > ')
 try:
     print('\ndecoding data...')
     decoded_data = W3.eth.contract(address=CONTR_ARB_ADDR, abi=CONTR_ARB_ABI).decode_function_input(hex_data)
+    print(f' decoded function_signature: "{decoded_data}"\n\n')
+    print(f' decoded function_signature: "{decoded_data[0]}"\n\n')
     print(f' decoded function_signature: "{decoded_data[0].fn_name}"\n\n')
 except Exception as e:
     print(f' ERROR: {e} ("{hex_data}")\n')

@@ -31,15 +31,15 @@ if int(sel_chain) == 0:
 else:
     # pulsechain main net (update_103123)
     GAS_LIMIT = 20_000_000 # max gas units to use for tx (required)
-    GAS_PRICE = W3.to_wei('0.00025', 'ether') # price to pay for each unit of gas (optional?)
-    MAX_FEE = W3.to_wei('0.005', 'ether') # max fee per gas unit to pay (optional?)
+    GAS_PRICE = W3.to_wei('0.0005', 'ether') # price to pay for each unit of gas (optional?)
+    MAX_FEE = W3.to_wei('0.001', 'ether') # max fee per gas unit to pay (optional?); note: 0.0005 causes delay for _deploy_contract
     MAX_PRIOR_FEE_RATIO = 1.0
     MAX_PRIOR_FEE = int(W3.eth.max_priority_fee * MAX_PRIOR_FEE_RATIO) # max fee per gas unit to pay for priority (faster) (optional)
 
 print(f'''\nSetting gas params ...
     GAS_LIMIT: {GAS_LIMIT}
-    GAS_PRICE: {GAS_PRICE}
-    MAX_FEE: {MAX_FEE}
+    GAS_PRICE: {GAS_PRICE} *'gasPrice' param fails on PC
+    MAX_FEE: {MAX_FEE} ({MAX_FEE / 10**18} wei)
     MAX_PRIOR_FEE: {MAX_PRIOR_FEE}''')
 #------------------------------------------------------------#
 print(f'\nreading contract abi & bytecode files ...')
@@ -75,12 +75,9 @@ def estimate_gas():
     block = W3.eth.get_block("latest", full_transactions=True)
     gas_estimate = int(statistics.median(t.gas for t in block.transactions))
     gas_price = W3.eth.gas_price
-    gas_price_1018 = gas_price * 10**18
     gas_price_eth = W3.fromWei(gas_price, 'ether')
     print(f"Estimated gas cost _ 1: {gas_estimate}")
-    print(f" Current gas price: {gas_price} W3.eth.gas_price")
-    print(f" Current gas price: {gas_price_eth} PLS")
-    print(f" Current gas price: {gas_price_1018} maybe")
+    print(f" Current gas price: {gas_price_eth} ether (PLS) == {gas_price} wei")
     # Optionally, you can also estimate the gas price (in Gwei) using a gas price strategy
     # Replace 'fast' with other strategies like 'medium' or 'slow' as needed
     #gas_price = W3.eth.generateGasPrice(fast_gas_price_strategy)

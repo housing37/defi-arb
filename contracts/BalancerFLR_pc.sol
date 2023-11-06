@@ -31,6 +31,8 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
     event logX(address indexed contr, address sender, string message);
     event logRFL(address indexed contr, address sender, string message);
     event logMFL(address indexed contr, address sender, string message);
+    event ErrorOccurred(string errorMessage);
+    string private errMsg;
 
     modifier onlyOwner() {
         require(msg.sender == _owner, "Only owner");
@@ -72,10 +74,6 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         require(tokens[0].balanceOf(address(this)) >= amounts[0], "err: loan transfer failed :?");
 
         // (2) arb setup -> (3) arb swap -> (4) arb tear-down _ (weth->wpls->...->wpls->weth)
-        //  (2) [weth, wpls] _ plsx_rtr_v2 _ amounts[0]
-        //  (3) [wpls, rob] _ 9inch_rtr _ amntOut
-        //  (3) [rob, wpls] _ plsx_rtr_v2 _ amntOut
-        //  (4) [wpls, weth] _ plsx_rtr_v2 _ amntOut
         uint256 amntOut = amounts[0];
         for (uint256 i = 0; i < routers.length; i++) {
             amntOut = swap_v2_wrap(paths[i], routers[i], amntOut);
@@ -84,7 +82,14 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         // (5) payback WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
         //  note: no 'token.approve(,)' needed since this contract is transfering its own tokens
         uint256 amountOwed = amounts[0] + feeAmounts[0]; // note_110523: no fee on pc->balancer
-        require(tokens[0].balanceOf(address(this)) >= amountOwed, "err: arb failed payback QQ");
+        //require(tokens[0].balanceOf(address(this)) >= amountOwed, "err: arb failed payback QQ");
+        
+        if (tokens[0].balanceOf(address(this)) < amountOwed) {
+            errMsg = string(abi.encodePacked("err: arb failed payback QQ; owed: ", uint2str(amountOwed)));
+            //string memory errMsg = string(abi.encodePacked("err: arb failed payback QQ; owed: ", uint2str(amountOwed)));
+            emit ErrorOccurred(errMsg);
+            require(tokens[0].balanceOf(address(this)) >= amountOwed, string(abi.encodePacked("err: arb failed payback QQ; owed: ", uint2str(amountOwed))));
+        }
         IERC20(tokens[0]).transfer(address(vault), amountOwed);
     }
     
@@ -144,5 +149,25 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         // Transfer tokens to the target address
         tok.transfer(to, amount);
     }
+    
+    function uint2str(uint256 _i) private pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 length;
+        while (j != 0) {
+            length++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(length);
+        uint256 k = length - 1;
+        while (_i != 0) {
+            bstr[k--] = bytes1(uint8(48 + _i % 10));
+            _i /= 10;
+        }
+        return string(bstr);
+    }
 }
+
 
