@@ -387,9 +387,9 @@ def read_cli_args():
 def go_main():
     sel_chain = input('select chain to search...\n 0 = ethereum mainnet\n 1 = pulsechain\n 2 = both\n > ')
     assert 0 <= int(sel_chain) <= 2, 'invalid selection, aborting...'
-    if sel_chain == '0':
+    if int(sel_chain) == 0:
         LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
-    elif sel_chain == '1':
+    elif int(sel_chain) == 1:
         LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
     else:
         LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
