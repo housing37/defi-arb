@@ -107,10 +107,6 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         require(new_bal >= amntOut, "err: balance low");
         
         return amntOut;
-        
-        // (N/A) quote-to-exe slippage check
-        // verifiy quote-to-exe slippage & balance of token received (reverts)
-        //verifyRequirements(amountsOut[amountsOut.length -1], slip_perc, amntOut, path);
     }
     
     // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2, 9inch
@@ -155,23 +151,5 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
 
         // Transfer tokens to the target address
         tok.transfer(to, amount);
-    }
-    
-    //uint256 quote_exe_slip_perc = 2; // quote-to-execute slippage %
-    function verifyRequirements(amountsOut, quote_exe_slip_perc, uint256 amntOut, path) private {
-        // verify slippage from quote-to-execute (amntOut is within quote_exe_slip_perc of amountsOut[1])
-        (lower_bound, upper_bound) = getSlippageForPerc(amountsOut[amountsOut.length -1], quote_exe_slip_perc);
-        require(lower_bound <= amntOut && amntOut <= upper_bound, string(abi.encodePacked("err: quote-to-execute slippage > ", quote_exe_slip_perc, "%")));
-
-        // verifiy balance of token received
-        uint256 wpls_bal = IERC20(path[path.length -1]).balanceOf(address(this));
-        require(wpls_bal >= amntOut, "err: balance low");
-    }
-    
-    function getSlippageForPerc(uint256 amnt, uint256 perc) private returns (uint256, uint256) {
-        uint256 amnt_slip = (amnt * perc) / 100;
-        uint256 lower_bound = amnt - amnt_slip;
-        uint256 upper_bound = amnt + amnt_slip;
-        return (lower_bound, upper_bound);
     }
 }
