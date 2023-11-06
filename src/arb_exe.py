@@ -84,14 +84,15 @@ print(f'finalizing arb settings...')
 #ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
 #AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
-AMNT_LOAN_TOK =  20000000 * 10**18 # max pc->balancer loan (114983659 WETH)
+AMNT_LOAN_TOK =  10_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
 
 LST_ARB_KEYS = [    ['ROUTER',          ['PATH_0', 'PATH_n']]]
 LST_ARB = [ [ROUTER_pulsex_router02_v2, [ADDR_WETH, ADDR_WPLS]],
 
-            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_ROB]], # arb_search
-            [ROUTER_9INCH_PC,           [ADDR_ROB, ADDR_WHETH]], # arb_search
-            [ROUTER_pulsex_router02_v2, [ADDR_WHETH, ADDR_WPLS]], # map_route
+            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_PLSX]], # map_route
+            [ROUTER_pulsex_router02_v2, [ADDR_PLSX, ADDR_WBTCp]], # arb_search
+            [ROUTER_9INCH_PC,           [ADDR_WBTCp, ADDR_9INCH]], # arb_search
+            [ROUTER_9INCH_PC,           [ADDR_9INCH, ADDR_WPLS]], # map_route
             
             [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_WETH]]]
 LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
