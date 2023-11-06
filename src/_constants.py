@@ -33,6 +33,7 @@ ADDR_BBTC = '0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541'
 # pulsechain
 ADDR_ROB = '0x1c2766F5949A4aA5d4cf0439067051135ffc1b28'
 ADDR_WPLS = '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'
+ADDR_ATROP = '0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6'
 #------------------------------------------------------------#
 print('getting keys and setting globals ...')
 ## SETTINGS ##
