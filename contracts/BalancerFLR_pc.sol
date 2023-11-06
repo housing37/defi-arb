@@ -24,16 +24,6 @@ interface IUniswapV2 {
 contract BalancerFLR_pc is IFlashLoanRecipient {
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-    
-    address private constant weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-    address private constant atropa = address(0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6);
-    address private constant wpls = address(0xA1077a294dDE1B09bB078844df40758a5D0f9a27);
-    address private constant rob = address(0x1c2766F5949A4aA5d4cf0439067051135ffc1b28);
-    
-    // uniswap v2 protocol based
-    address private constant plsx_rtr_v1 = address(0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02);
-    address private constant plsx_rtr_v2 = address(0x165C3410fC91EF562C50559f7d2289fEbed552d9);
-    address private constant 9inch_rtr = address(0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725);
 
     address public _owner;
 
@@ -57,7 +47,7 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         bytes memory userData
     ) external {
         emit logMFL(address(this), msg.sender, "logMFL 0");
-        require(msg.sender == _owner, "loan to owner only");
+        require(msg.sender == _owner, "loan to owner only ;)");
         emit logMFL(address(this), msg.sender, "logMFL 1");
         vault.flashLoan(this, tokens, amounts, userData);
         emit logMFL(address(this), msg.sender, "logMFL -1");
@@ -104,7 +94,7 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
                 
         // verifiy new balance of token received
         uint256 new_bal = IERC20(path[path.length -1]).balanceOf(address(this));
-        require(new_bal >= amntOut, "err: balance low");
+        require(new_bal >= amntOut, "err: balance low :{");
         
         return amntOut;
     }
