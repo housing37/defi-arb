@@ -74,45 +74,51 @@ else:
 
 print(f'''\nSetting gas params ...
     GAS_LIMIT: {GAS_LIMIT}
-    GAS_PRICE: {GAS_PRICE}
+    GAS_PRICE: {GAS_PRICE} *'gasPrice' param fails on PC
     MAX_FEE: {MAX_FEE}
     MAX_PRIOR_FEE: {MAX_PRIOR_FEE}''')
 #------------------------------------------------------------#
 #------------------------------------------------------------#
     
 print(f'finalizing arb settings...')
-ROUTER_0 = ROUTER_UNISWAP_V3
-ROUTER_1 = ROUTER_UNISWAP_V3
+#ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
+ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
+AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
 
-#ADDR_LOAN_TOK = ADDR_USDC # house_110423: USDC failes test balancer loan (pc)
-ADDR_LOAN_TOK = ADDR_WETH # house_110423: WETH success test balancer loan (pc)
-AMNT_LOAN_TOK = 114983659 * 10**18 # max pc -> balancer loan (114983659 WETH)
+LST_ARB_KEYS = [    ['ROUTER',          ['PATH_0', 'PATH_n']]]
+LST_ARB = [ [ROUTER_pulsex_router02_v2, [ADDR_WETH, ADDR_WPLS]],
+            [ROUTER_9INCH_PC,           [ADDR_WPLS, ADDR_ROB]],
+            [ROUTER_pulsex_router02_v2, [ADDR_ROB, ADDR_WPLS]],
+            [ROUTER_pulsex_router02_v2, [ADDR_WPLS, ADDR_WETH]]]
+LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
-# ethereum
-#ADDR_IN_0 = ADDR_WBTC
+## ethereum
+#ROUTER_0 = ROUTER_UNISWAP_V3
+#ROUTER_1 = ROUTER_UNISWAP_V3
+##ADDR_IN_0 = ADDR_WBTC
+##ADDR_OUT_MIN_0 = ADDR_USDT
+##ADDR_IN_1 = ADDR_USDT
+##ADDR_OUT_MIN_1 = ADDR_WBTC
+#
+## ethereum
+#ADDR_IN_0 = ADDR_ROB
 #ADDR_OUT_MIN_0 = ADDR_USDT
 #ADDR_IN_1 = ADDR_USDT
 #ADDR_OUT_MIN_1 = ADDR_WBTC
-
-# ethereum
-ADDR_IN_0 = ADDR_ROB
-ADDR_OUT_MIN_0 = ADDR_USDT
-ADDR_IN_1 = ADDR_USDT
-ADDR_OUT_MIN_1 = ADDR_WBTC
-
-AMNT_IN_0 = '19.1442'
-AMNT_OUT_MIN_1 = '19.1909'
-LST_ARB_KEYS = [
-        ['ROUTER_0', 'ROUTER_1'],
-        [['ADDR_IN_0', 'ADDR_OUT_MIN_0'], ['ADDR_IN_1', 'ADDR_OUT_MIN_1']],
-        ['AMNT_IN_0', 'AMNT_OUT_MIN_1']
-    ]
-LST_ARB = [
-        [ROUTER_0, ROUTER_1],
-        [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
-        [AMNT_IN_0, AMNT_OUT_MIN_1]
-    ]
-LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
+#
+#AMNT_IN_0 = '19.1442'
+#AMNT_OUT_MIN_1 = '19.1909'
+#LST_ARB_KEYS = [
+#        ['ROUTER_0', 'ROUTER_1'],
+#        [['ADDR_IN_0', 'ADDR_OUT_MIN_0'], ['ADDR_IN_1', 'ADDR_OUT_MIN_1']],
+#        ['AMNT_IN_0', 'AMNT_OUT_MIN_1']
+#    ]
+#LST_ARB = [
+#        [ROUTER_0, ROUTER_1],
+#        [[ADDR_IN_0, ADDR_OUT_MIN_0], [ADDR_IN_1, ADDR_OUT_MIN_1]],
+#        [AMNT_IN_0, AMNT_OUT_MIN_1]
+#    ]
+#LST_ARB_KV = list(zip(LST_ARB_KEYS, LST_ARB))
 
 #------------------------------------------------------------#
 #   FUNCTION SUPPORT                                         #
@@ -146,30 +152,18 @@ def tx_sign_send_wait(tx, wait_rec=True):
 
 # router contract, tok_contr (in), amount_exact (in_ET-T|out_T-ET), swap_path, swap_type (ET-T|T-ET)
 def go_loan():
-    global W3, ACCOUNT, LST_ARB, CHAIN_ID, RPC_URL, CONTR_ARB
+    global W3, ACCOUNT, LST_ARB, LST_ARB_KV, CHAIN_ID, RPC_URL, CONTR_ARB
     print(f'setting arb tx params data... [{get_time_now()}]')
-    #print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
-    addr_arb_contr = CONTR_ARB_ADDR
-    
-    router_0 = LST_ARB[0][0]
-    router_1 = LST_ARB[0][1]
+    print(f' LST_ARB_KV:\n {json.dumps(LST_ARB_KV, indent=4)}')
 
-    addr_path_0 = LST_ARB[1][0] # ie. [ADDR_DAI, ADDR_WBTC]
-    addr_path_1 = LST_ARB[1][1] # ie. [ADDR_WBTC, ADDR_rETH]
-
-    amntIn_0 = W3.toWei(LST_ARB[2][0], 'ether')
-    amntOutMin_1 = W3.toWei(LST_ARB[2][1], 'ether')
-
-    print('encoding arb tx params data abi...')
-    # NOTE: if receive runtime error w/ encode_abi
-    #   pointing to: /Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/ethereum/abi.py
-    #   then check the len of list of types vs len of data_to_encode
-    data_to_encode = [router_0, router_1, addr_path_0, addr_path_1, amntIn_0, amntOutMin_1]
-    encoded_data = eth_abi.encode_abi(('address', 'address', 'address[]', 'address[]', 'uint256', 'uint256'), data_to_encode)
-    
     # Define the array of IERC20 tokens for loan (w/ amounts)
     lst_tok_addr = [ADDR_LOAN_TOK] # tokens to receive loan
     lst_tok_amnt = [AMNT_LOAN_TOK] # amnt to receive
+    
+    routers = [LST_ARB[i][0] for i in LST_ARB]
+    paths = [LST_ARB[i][1] for i in LST_ARB]
+    data_to_encode = [routers, paths]
+    encoded_data = eth_abi.encode_abi(('address[]', 'address[][]'), data_to_encode)
 
     print(f'setting function call...\n loan tokens: {lst_tok_addr}\n loan amounts: {[f"{(x / 10**18):,}" for x in lst_tok_amnt]} ({AMNT_LOAN_TOK})\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(

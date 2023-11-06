@@ -14,6 +14,12 @@ ROUTER_PANCAKESWAP_V3 = '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4'
 ROUTER_9INCH_EM = '0xFD8b9Ba4845fB38c779317eC134b298C064937a2'
 
 # pulsechain dex router support
+# this is what i've found for v1 and v2 routers (i don't see 0x98b ever used in my MM txs)
+#   not sure what 0x98b is for ref: https://www.irccloud.com/pastebin/6ftmqWuk
+ROUTER_pulsex_router02_v1='0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02' # PulseXRouter02 'v1' ref: https://www.irccloud.com/pastebin/6ftmqWuk
+ROUTER_pulsex_router02_v2='0x165C3410fC91EF562C50559f7d2289fEbed552d9' # PulseXRouter02 'v2' ref: https://www.irccloud.com/pastebin/6ftmqWuk
+ROUTER_pulsex_router02_vX='0xa619F23c632CA9f36CD4Dcea6272E1eA174aAC27' # PulseXSwapRouter 'v1' ref: MM tx
+    # ref tx: https://scan.pulsechain.com/tx/0x3c3cceb53976f332f97e1345cd97488d01a33f81cee81d4f08d0aaad574e7735/
 ROUTER_9INCH_PC = '0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725'
 
 #------------------------------------------------------------#
