@@ -62,7 +62,7 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         vault.flashLoan(this, tokens, amounts, userData);
         emit logMFL(address(this), msg.sender, "logMFL -1");
     }
-
+    
     // note_110523: only uniswap v2 protocol support for _pc
     function receiveFlashLoan(
         IERC20[] memory tokens,
@@ -75,6 +75,7 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         
         emit logRFL(address(this), msg.sender, "logRFL 1");
         (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
+        
         uint256 quote_exe_slip_perc = 2;
         
         // (1) get loan in WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
@@ -83,44 +84,40 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
         uint256 weth_bal = tokens[0].balanceOf(address(this))
         require(weth_bal == amounts[0], "err: loan transfer failed")
         
+        
         // (2) arb setup (WETH -> WPLS) _ note: plsx_rtr_v2 w/ 1000x more liq than plsx_rtr_v1
         // weth -> wpls (on pulsex_v2)
-        address[] memory path = [weth, wpls];
-        uint256[] memory amountsOut = IUniswapV2(plsx_rtr_v2).getAmountsOut(amounts[0], path); // quote swap
-        uint256 amntOut = swap_v2(plsx_rtr_v2, path, weth_bal, amountsOut[1]); // execute swap
+        amntOut = swap_v2_wrap([weth, wpls], plsx_rtr_v2, amounts[0], quote_exe_slip_perc);
         
-        // verifiy quote-to-exe slippage & balance of token received (reverts)
-        verifyRequirements(amountsOut[amountsOut.length -1], quote_exe_slip_perc, amntOut, path);
         
         // (3) arb swap (WPLS -> ... -> WPLS)
-        //  wpls -> rob (on 9inch)
-        address[] memory path = [wpls, rob];
-        uint256[] memory amountsOut = IUniswapV2(9inch_rtr).getAmountsOut(amntOut, path); // quote swap
-        uint256 amntOut = swap_v2(9inch_rtr, path, amntOut, amountsOut[1]); // execute swap
-        
-        // verifiy quote-to-exe slippage & balance of token received (reverts)
-        verifyRequirements(amountsOut[amountsOut.length -1], quote_exe_slip_perc, amntOut, path);
+        // wpls -> rob (on 9inch)
+        amntOut = swap_v2_wrap([wpls, rob], 9inch_rtr, amntOut, quote_exe_slip_perc);
             
         // rob -> wpls (on pulsex_v2)
-        address[] memory path = [rob, wpls];
-        uint256[] memory amountsOut = IUniswapV2(plsx_rtr_v2).getAmountsOut(amntOut, path); // quote swap
-        uint256 amntOut = swap_v2(plsx_rtr_v2, path, amntOut, amountsOut[1]); // execute swap
+        amntOut = swap_v2_wrap([rob, wpls], plsx_rtr_v2, amntOut, quote_exe_slip_perc);
         
-        // verifiy quote-to-exe slippage & balance of token received (reverts)
-        verifyRequirements(amountsOut[amountsOut.length -1], quote_exe_slip_perc, amntOut, path);
         
         // (4) arb tear-down (WPLS -> WETH) _ note: plsx_rtr_v2 w/ 1000x more liq than plsx_rtr_v1
-        address[] memory path = [wpls, weth];
-        uint256[] memory amountsOut = IUniswapV2(plsx_rtr_v2).getAmountsOut(amntOut, path); // quote swap
-        uint256 amntOut = swap_v2(plsx_rtr_v2, path, amntOut, amountsOut[1]); // execute swap
-
-        // verifiy quote-to-exe slippage & balance of token received (reverts)
-        verifyRequirements(amountsOut[amountsOut.length -1], quote_exe_slip_perc, amntOut, path);
+        amntOut = swap_v2_wrap([wpls, weth], plsx_rtr_v2, amntOut, quote_exe_slip_perc);
+        
         
         // (5) payback WETH (0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
         //  note: no 'token.approve(,)' needed since this contract is transfering its own tokens
         uint256 amountOwed = amounts[0] + feeAmounts[0]; // house_110523: on fee on pc
         IERC20(tokens[0]).transfer(address(vault), amountOwed);
+    }
+    
+    // uniwswap v2 protocol based: get quote and execute swap w/ quote-to-exe slippage check
+    function swap_v2_wrap(address[] memory path, address router, uint256 amntIn, uint256 slip_perc) private returns (uint256) {
+        //address[] memory path = [weth, wpls];
+        uint256[] memory amountsOut = IUniswapV2(router).getAmountsOut(amntIn, path); // quote swap
+        uint256 amntOut = swap_v2(router, path, amntIn, amountsOut[amountsOut.length -1]); // execute swap
+        
+        // verifiy quote-to-exe slippage & balance of token received (reverts)
+        verifyRequirements(amountsOut[amountsOut.length -1], slip_perc, amntOut, path);
+        
+        return amntOut;
     }
     
     // v2: solidlycom, kyberswap, pancakeswap, sushiswap, uniswap v2, pulsex v1|v2, 9inch
@@ -169,12 +166,12 @@ contract BalancerFLR_pc is IFlashLoanRecipient {
     
     function verifyRequirements(amountsOut, quote_exe_slip_perc, uint256 amntOut, path) private {
         // verify slippage from quote-to-execute (amntOut is within quote_exe_slip_perc of amountsOut[1])
-        (lower_bound, upper_bound) = getSlippageForPerc(amountsOut[amountsOut.length -1], quote_exe_slip_perc)
+        (lower_bound, upper_bound) = getSlippageForPerc(amountsOut[amountsOut.length -1], quote_exe_slip_perc);
         require(lower_bound <= amntOut && amntOut <= upper_bound, string(abi.encodePacked("err: quote-to-execute slippage > ", quote_exe_slip_perc, "%")));
 
         // verifiy balance of token received
-        uint256 wpls_bal = IERC20(path[path.length -1]).balanceOf(address(this))
-        require(wpls_bal >= amntOut, "err: balance low")
+        uint256 wpls_bal = IERC20(path[path.length -1]).balanceOf(address(this));
+        require(wpls_bal >= amntOut, "err: balance low");
     }
     
     function getSlippageForPerc(uint256 amnt, uint256 perc) private returns (uint256, uint256) {
