@@ -2,7 +2,7 @@ import re
 import binascii
 
 hex_message = "0x4e487b710000000000000000000000000000000000000000000000000000000000000011"
-
+print(f'\nencoded input: {hex_message}')
 # Remove the "0x" prefix
 hex_message = hex_message[2:]
 
@@ -37,6 +37,8 @@ if match:
     print("Error Message (string_data):", err_msg_string_data)
     print("Function Name:", func_name)
     print("Amount Owed:", amount_owed)
+    print()
 else:
     print("Error: Dynamic data not found in the message")
+    print()
 
