@@ -85,7 +85,9 @@ print(f'finalizing arb settings...')
 #ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
 #AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
-AMNT_LOAN_TOK =  14_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
+AMNT_LOAN_TOK =  12_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
+#14000000000000000000000000
+#17000000000000000000
 
 LST_ARB_KEYS = [    ['ROUTER',          ['PATH_0', 'PATH_n']]]
 LST_ARB = [ [ROUTER_pulsex_router02_v2, [ADDR_WETH, ADDR_WPLS]],
@@ -175,8 +177,9 @@ def go_loan():
     print(f'\nsign, send, and wait for receipt... [{get_time_now()}]')
     tx_hash, tx_receipt, wait_rec = tx_sign_send_wait(data, wait_rec=True)
         
+    # note_110723: still not working yet        
     # Retrieve the event logs
-    logs = contract.events.ErrorOccurred().processReceipt(txn_receipt)
+    logs = CONTR_ARB.events.ErrorOccurred().processReceipt(tx_receipt)
     if logs:
         error_message = logs[0].args.errorMessage
         print("\n\nTransaction failed with custom error message:", error_message, "\n\n")
