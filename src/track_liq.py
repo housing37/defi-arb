@@ -19,6 +19,7 @@ import db_controller as dbc
 #------------------------------------------------------------#
 #   GLOBALS
 #------------------------------------------------------------#
+SEC_WAIT = 60*10 # 10 minutes
 
 #------------------------------------------------------------#
 #   FUNCTNION SUPPORT                                        #
@@ -235,7 +236,7 @@ if __name__ == "__main__":
         tot_req_cnt += net_req_cnt
         tot_iter_cnt += 1
         print(f'\nRequest Cycle #{tot_iter_cnt}: {net_req_cnt} requests ({tot_req_cnt} total since start)')
-        wait_sleep(60*5, b_print=True, bp_one_line=True) # wait 5 minutes
+        wait_sleep(SEC_WAIT, b_print=True, bp_one_line=True)
         #wait_sleep(5, b_print=True, bp_one_line=True)
     
     ## end ##
