@@ -2,6 +2,64 @@
 
 ## SOLIDITY_KB
 
+### checking for existing mappings
+    address gameCode = generateAddressHash(msg.sender, gameName);
+    require(bytes(games[gameCode].gameName).length == 0, "err: game name already exists :/");
+    
+    games[gameCode] is used to access the gameCode key in the mapping. If the key doesn't exist, the result will be a default value for the type of the mapping's value (in this case, an uninitialized Game struct with all fields set to their default values).
+
+    This code is a valid way to check if a specific gameCode already exists in the mapping without creating a new mapping entry.
+
+### using 'memory' isntead of 'storage'
+    In the Solidity code I provided, I used `Game memory` instead of `Game storage` in the `createGame` function because, in this context, it's more efficient and appropriate to use `Game memory`.
+
+    When you use `Game memory`, you are creating a temporary copy of the `Game` struct in memory, which is suitable for temporary operations like initializing a new `Game` instance within a function. This is more efficient because you don't need to persist the `Game` struct on the blockchain or in storage; it's only relevant within the scope of the function. Storing data in memory consumes less gas compared to storage.
+
+    Using `Game storage` would be appropriate when you want to persist the `Game` struct on the blockchain, and you need to modify it in a way that the changes should be stored permanently. For example, if you want to update the properties of an existing game or maintain a list of games over time, then you would use `Game storage`.
+
+    In the `createGame` function, we are creating a new `Game` instance and storing it in the `games` array. However, we are not modifying an existing game's properties, so using `Game memory` for creating and initializing the new game instance is more efficient and appropriate. Storing data in memory when you don't need to use storage can help reduce gas costs in your Solidity contract.
+    
+### UINT storage sizes (chatGPT)
+    uint8: 8 bits (0 to 255)
+    uint16: 16 bits (0 to 65,535)
+    uint32: 32 bits (0 to 4,294,967,295)
+    uint64: 64 bits
+    uint128: 128 bits
+    uint256: 256 bits (the most common choice for very large values)
+    note: uint defauls to uint256
+    
+### reasons gas consumption when modifying the state of a smart contract (chatGPT)
+    1. **Storage Changes**: Modifying the state of a smart contract, such as clearing an array or deleting key-value pairs in a mapping, involves changes to the contract's storage. Each storage change consumes gas.
+    2. **Iteration**: In the case of a mapping, if you need to clear all key-value pairs, you would typically iterate through the keys and delete each key-value pair. Each iteration consumes gas, and the gas cost increases with the number of key-value pairs.
+    3. **Gas Cost for Deletion**: The `delete` keyword in Solidity is used to set values to their default state. Deleting a key-value pair in a mapping consumes gas, as the operation involves clearing storage slots.
+    4. **Execution Overhead**: Gas is also used to cover the overhead associated with executing a transaction on the Ethereum network.
+
+    Keep in mind that the gas cost can vary based on the specific circumstances, such as the size of the array or mapping and the overall complexity of the contract. Therefore, it's essential to consider the gas cost when designing and interacting with smart contracts, particularly when dealing with large data structures.
+
+### IERC-20 widely recognized
+    ref: https://github.com/balancer/balancer-v2-monorepo/blob/master/pkg/interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol
+    FUNCTION signatures and their corresponding keccak256 (SHA-3) hash values for the functions defined in the ERC-20 interface:
+     1. `totalSupply()`: `0x18160ddd` - Returns the total supply of tokens.
+     2. `balanceOf(address)`: `0x70a08231` - Returns the token balance owned by the specified `account`.
+     3. `transfer(address, uint256)`: `0xa9059cbb` - Moves tokens from the caller's account to the `recipient` and returns a boolean indicating success.
+     4. `allowance(address, address)`: `0xdd62ed3e` - Returns the remaining number of tokens that `spender` is allowed to spend on behalf of `owner`.
+     5. `approve(address, uint256)`: `0x095ea7b3` - Sets the allowance of `spender` over the caller's tokens and returns a boolean indicating success.
+     6. `transferFrom(address, address, uint256)`: `0x23b872dd` - Moves tokens from `sender` to `recipient` using the allowance mechanism and returns a boolean indicating success.
+
+    ref: https://github.com/balancer/balancer-v2-monorepo/blob/master/pkg/interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol
+    EVENTS
+     1. `Transfer(address indexed from, address indexed to, uint256 value)` - Emitted when `value` tokens are moved from one account (`from`) to another (`to`).
+     2. `Approval(address indexed owner, address indexed spender, uint256 value)` - Emitted when the allowance of a `spender` for an `owner` is set by a call to `approve`. `value` is the new allowance.
+     
+    ref: chatGPT
+    ADDITIONAL FUNCTIONS included for clarity and completeness, even though they are not part of the standard ERC-20 interface
+        functions provide versatility and customization to the token contract, accommodating specific project requirements while adhering to the core ERC-20 standard for token functionality.
+     1. `increaseAllowance(address spender, uint256 addedValue)`: `0xd73dd623` - Allows the owner to increase the allowance for a spender, providing more flexibility in managing allowances.
+     2. `decreaseAllowance(address spender, uint256 subtractedValue)`: `0x6af65710` - Allows the owner to decrease the allowance for a spender, offering finer control over allowances.
+     3. `mint(address account, uint256 amount)`: `0x40c10f19` - Enables the contract owner to mint new tokens and assign them to a specific account, which is a common feature in many token contracts to increase the token supply.
+     4. `_transfer(address sender, address recipient, uint256 amount)`: An internal function used for the actual transfer of tokens within the contract, essential for implementing the ERC-20 functions.
+     5. `_approve(address owner, address spender, uint256 amount)`: Another internal function for setting the allowance between the owner and spender, playing a crucial role in the contract's functionality.
+
 ### indexing event parameters (chatGPT)
     In Solidity, when defining event parameters, you have the option to mark some of them as "indexed." Indexed parameters are a way to optimize event filtering and search functionality in Ethereum clients like web3.py.
 
@@ -102,39 +160,28 @@
     64. `claimTokens(address,uint256)`: Custom function used
 
 ### FUNCTION MODIFIERS & DECORATORS
-In Solidity, there are various function modifiers and decorators that can change the behavior of a function. Here's a list of some common ones:
+    In Solidity, there are various function modifiers and decorators that can change the behavior of a function. Here's a list of some common ones:
 
-1. Visibility Modifiers:
-   - `public`: The function can be called from anywhere.
-   - `internal`: The function can only be called from within the current contract or derived contracts.
-   - `external`: The function can be called from outside the contract and other contracts.
-   - `private`: The function can only be called from within the current contract.
-
-2. State Mutability:
-   - `view` or `constant`: The function does not modify the state and only reads data.
-   - `pure`: The function does not modify the state and does not read data.
-   - (Default): If none of the above are specified, the function is considered "non-payable" and can modify the state.
-
-3. `payable`: Allows a function to receive Ether as part of the function call;
-
-3b.`payable(address)`: an Ethereum address that can receive and send Ether.
-
-4. `returns`: Specifies the return data types of a function.
-
-5. `modifier`: User-defined functions that can be used to modify the behavior of other functions. You can define custom logic to be executed before or after the main function.
-
-6. `revert`: Used to revert a transaction if certain conditions are not met. For example, you can use `require` and `assert` statements to revert transactions.
-
-7. Events: Events are used to log information about transactions and changes in the contract's state.
-
-8. `constant` and `immutable` variables: These can be used to store constant data and their values cannot be changed after deployment.
-
-9. `assembly`: Allows low-level inline assembly code to be included in the contract.
-
-10. Function Overloading: Solidity supports function overloading, which means you can have multiple functions with the same name but different parameter lists.
-
-11. The `override` keyword is used to explicitly indicate in a derived contract that a function is intended to override a function from a base contract.
-    When you use the override keyword, you're essentially telling the compiler that you intend to replace a function in the base contract with a new implementation in the derived contract.
+    1. Visibility Modifiers:
+       - `public`: The function can be called from anywhere.
+       - `internal`: The function can only be called from within the current contract or derived contracts.
+       - `external`: The function can be called from outside the contract and other contracts.
+       - `private`: The function can only be called from within the current contract.
+    2. State Mutability:
+       - `view` or `constant`: The function does not modify the state and only reads data.
+       - `pure`: The function does not modify the state and does not read data.
+       - (Default): If none of the above are specified, the function is considered "non-payable" and can modify the state.
+    3. `payable`: Allows a function to receive Ether as part of the function call;
+    3b.`payable(address)`: an Ethereum address that can receive and send Ether.
+    4. `returns`: Specifies the return data types of a function.
+    5. `modifier`: User-defined functions that can be used to modify the behavior of other functions. You can define custom logic to be executed before or after the main function.
+    6. `revert`: Used to revert a transaction if certain conditions are not met. For example, you can use `require` and `assert` statements to revert transactions.
+    7. Events: Events are used to log information about transactions and changes in the contract's state.
+    8. `constant` and `immutable` variables: These can be used to store constant data and their values cannot be changed after deployment.
+    9. `assembly`: Allows low-level inline assembly code to be included in the contract.
+    10. Function Overloading: Solidity supports function overloading, which means you can have multiple functions with the same name but different parameter lists.
+    11. The `override` keyword is used to explicitly indicate in a derived contract that a function is intended to override a function from a base contract.
+        When you use the override keyword, you're essentially telling the compiler that you intend to replace a function in the base contract with a new implementation in the derived contract.
     
 These modifiers and decorators allow you to control how functions behave, who can call them, and what changes they can make to the contract state. You can use a combination of these modifiers and decorators to design the behavior of your smart contracts according to your requirements.
 
