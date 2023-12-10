@@ -18,6 +18,9 @@
                  (on PC -> for USDC, but indeed succeeds for WETH)
 
 ## PulseChain dex routers
+    DEX: 9mm
+     ref: https://v3.9mm.pro/
+     
     DEX: 9inch (found through pc blockexplorer) _ 110423: uniswapV2 protocol YES confirmed
      addr: 0xeB45a3c4aedd0F47F345fB4c8A1802BB5740d725 // i think
      ref: https://www.9inch.io/

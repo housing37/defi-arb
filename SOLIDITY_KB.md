@@ -2,6 +2,94 @@
 
 ## SOLIDITY_KB
 
+### solidity native 'block' object attributes (chatGPT)
+    In Solidity, you can access various information about the current block using the block global variable. Here are some of the attributes of the block object:
+
+    block.number: The current block number.
+    block.difficulty: The current block's difficulty level.
+    block.gaslimit: The gas limit of the current block.
+    block.coinbase: The address of the miner who mined the current block.
+    block.timestamp: The timestamp of the current block, measured in seconds since the Unix epoch.
+    block.hash: The hash of the current block.
+    
+### python - get 'Transfer' event logs
+    * set from|to block numbers
+        from_block = start_block_num # int | w3.eth.block_number
+        to_block = 'latest' # int | 'latest'
+        str_from_to = f'from_block: {from_block} _ to_block: {to_block}'
+    
+    * PREFERRED _ fetch transfer events w/ simple fromBlock/toBlock
+        str_evt = 'Transfer(address,address,uint256)'
+        print(f"\nGETTING EVENT LOGS: '{str_evt}' _ {get_time_now()}\n ... {str_from_to}")
+        events = contract.events.Transfer().get_logs(fromBlock=from_block, toBlock=to_block) # toBlock='latest' (default)
+    
+    * ALTERNATE _ for getting events with 'create_filter' (not working _ 111623)
+        args = {'dst':'0x7b1C460d0Ad91c8A453B7b0DBc0Ae4F300423FFB'} # 'src', 'dst', 'wad'
+        event_filter = contract.events.Transfer().create_filter(fromBlock=from_block, toBlock=to_block, argument_filters=args)
+        event_filter = contract.events['Transfer'].create_filter(fromBlock=from_block, toBlock=to_block, argument_filters=args)
+        events = event_filter.get_new_entries()
+
+    * ALTERNATE _ for getting events with 'topics'
+    *   note: still have to filter manually for 'src,dst,wad'
+        transfer_event_signature = w3.keccak(text='Transfer(address,address,uint256)').hex()
+        filter_params = {'fromBlock':from_block, 'toBlock':to_block, 
+                        'address':contract.address, # defaults to conract.address
+                        'topics': [transfer_event_signature, # event signature
+                                    None, # 'from' (not included with 'Transfer' event)
+                                    None], # 'to' (not included with 'Transfer' event)
+        }
+        events = w3.eth.get_logs(filter_params)
+    
+### web3 event logs
+    Event Log Object
+        ref: https://web3py.readthedocs.io/en/v6.11.3/web3.contract.html#event-log-object
+        ref: https://web3py.readthedocs.io/en/v6.11.3/web3.contract.html#events
+    The Event Log Object is a python dictionary with the following keys:
+        args: Dictionary - The arguments coming from the event.
+        event: String - The event name.
+        logIndex: Number - integer of the log index position in the block.
+        transactionIndex: Number - integer of the transactions index position log was created from.
+        transactionHash: String, 32 Bytes - hash of the transactions this log was created from.
+        address: String, 32 Bytes - address from which this log originated.
+        blockHash: String, 32 Bytes - hash of the block where this log was in. null when it’s pending.
+        blockNumber: Number - the block number where this log was in. null when it’s pending.
+        
+### verify RPC endpoint
+    $ curl -I https://rpc.pulsechain.com
+
+### solidity contract global 'tx'
+    In Solidity, the tx variable is a global or built-in variable that provides information about the current transaction. It contains various fields and properties related to the transaction being executed. Some of the commonly used fields of the tx variable include:
+
+    tx.origin: Address of the sender of the transaction (not recommended for authorization checks, use msg.sender instead).
+    tx.gasprice: Gas price of the transaction.
+    tx.origin: Address of the sender of the transaction (not recommended for authorization checks, use msg.sender instead).
+    tx.gas: Gas provided by the sender.
+    tx.value: Amount of ether sent with the transaction.
+    So, when you use tx.gasprice, you are accessing the gas price of the current transaction. Keep in mind that the use of tx.origin for authorization checks is generally discouraged due to security reasons. It's better to use msg.sender for most cases.
+
+### Upgradeability patterns: Transparent Proxy vs. UUPS (Universal Upgradeable Proxy System) _ chatGPT
+    In Remix IDE for Solidity, the "upgradeability" option refers to the ability to upgrade a smart contract after it has been deployed. This is useful when you want to make improvements or fixes to a smart contract without needing to deploy a new version of it and migrate all the data and state to the new contract. There are two main upgradeability patterns available in Remix IDE: Transparent Proxy and UUPS (Universal Upgradeable Proxy System). Let's explore the differences between these two approaches:
+
+    1. **Transparent Proxy**:
+
+       - **DelegateCall**: The Transparent Proxy pattern relies on Solidity's `delegatecall` to forward function calls to the logic contract. This means that the storage and state of the logic contract remain intact, and the proxy contract only controls the functions and behavior.
+
+       - **Logic Contract**: In this pattern, the logic contract is separate from the proxy contract. If you want to upgrade your contract, you deploy a new logic contract and update the proxy to use the new logic contract.
+
+       - **Ease of Use**: Transparent proxies are relatively straightforward to use, and they allow you to upgrade logic without changing the proxy.
+
+    2. **UUPS (Universal Upgradeable Proxy System)**:
+
+       - **Fallback Function**: UUPS introduces a fallback function in the proxy contract, which helps redirect function calls to the logic contract.
+
+       - **Logic Contract Upgrade**: Instead of deploying a completely new logic contract, you can directly upgrade the existing logic contract by using the upgrade function provided by UUPS. This process is more efficient and cost-effective than deploying a new logic contract.
+
+       - **Storage Layout**: UUPS requires careful management of the storage layout to ensure compatibility between different logic contract versions. You need to maintain backward compatibility for the storage variables in the logic contract.
+
+       - **Gas Efficiency**: UUPS can be more gas-efficient because it doesn't require the deployment of a new logic contract for each upgrade.
+
+    In summary, the main difference between Transparent Proxy and UUPS in Remix IDE for upgradeability is how they handle the logic contract upgrades. Transparent Proxy uses separate logic contracts and delegate calls, while UUPS provides a more efficient and direct way to upgrade the logic contract. UUPS can be advantageous in terms of gas efficiency and contract maintenance, but it may require more careful management of storage variables to ensure compatibility between versions. Your choice between these two patterns depends on your specific use case and requirements.
+    
 ### checking for existing mappings
     address gameCode = generateAddressHash(msg.sender, gameName);
     require(bytes(games[gameCode].gameName).length == 0, "err: game name already exists :/");
@@ -167,6 +255,8 @@
        - `internal`: The function can only be called from within the current contract or derived contracts.
        - `external`: The function can be called from outside the contract and other contracts.
        - `private`: The function can only be called from within the current contract.
+       - `virutal`: function can be overridden
+            "When a function is marked as virtual in a base contract, it means that the function can be overridden by functions with the same signature in derived contracts"
     2. State Mutability:
        - `view` or `constant`: The function does not modify the state and only reads data.
        - `pure`: The function does not modify the state and does not read data.

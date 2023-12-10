@@ -50,7 +50,7 @@ W3 = Web3(HTTPProvider(RPC_URL))
 ACCOUNT = Account.from_key(SENDER_SECRET) # default
 #------------------------------------------------------------#
 print(f'\nreading contract abi & bytecode files ...')
-with open(bin_file, "r") as file: CONTR_ARB_ABI = '0x'+file.read()
+with open(bin_file, "r") as file: CONTR_BYTES = '0x'+file.read()
 with open(abi_file, "r") as file: CONTR_ARB_ABI = file.read()
 #------------------------------------------------------------#
 print(f'\ninitializing contract {CONTR_ARB_ADDR} ...')
