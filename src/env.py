@@ -42,6 +42,9 @@ SECRET_KEY = os.environ['SECRET_KEY']
 #ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY_0']
 ETH_MAIN_RPC_KEY = os.environ['ETH_MAIN_INFURA_KEY_1']
 
+# etherscan support
+ETHERSCAN_API_KEY = os.environ['ETHERSCAN_API_KEY']
+
 # wallet support
 sender_address_0 = os.environ['PUBLIC_KEY_3']
 sender_secret_0 = os.environ['PRIVATE_KEY_3']

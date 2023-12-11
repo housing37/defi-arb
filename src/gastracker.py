@@ -20,9 +20,9 @@ import threading
 from simple_email import *
 import time
 from datetime import datetime
+import env
 
-
-ETHERSCAN_API_KEY = '2BXII1MZ6SQRFENYRSZIVZG42IUT8H22CE'
+ETHERSCAN_API_KEY = env.ETHERSCAN_API_KEY
 GET_URL = f'https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}'
 #GET_URL = f'https://scan.pulsechain.com/api?module=gastracker&action=gasoracle&apikey={ETHERSCAN_API_KEY}'
 

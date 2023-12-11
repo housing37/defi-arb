@@ -1,4 +1,4 @@
-__fname = 'simple_email'
+__fname = 'simple_email' # ported from 'altcointools' (121023)
 __filename = __fname + '.py'
 cStrDivider = '#================================================================#'
 print('', cStrDivider, f'GO _ {__filename} -> starting IMPORTs & declaring globals', cStrDivider, sep='\n')
@@ -6,6 +6,11 @@ cStrDivider_1 = '#--------------------------------------------------------------
 
 import smtplib
 import env
+
+#from web3.exceptions import ContractLogicError
+#import inspect # this_funcname = inspect.stack()[0].function
+#parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#sys.path.append(parent_dir) # import from parent dir of this file
 #============================================================================#
 # SMTP email
 #SES_SERVER = 'mail.<domain>.com'
