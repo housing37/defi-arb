@@ -8,18 +8,6 @@ print('', cStrDivider, f'GO _ {__filename} -> starting IMPORTs & declaring globa
 #GLOBAL_PATH_ISE_LOGS = "../logs/ise.log"
 
 #============================================================================#
-## Misc smtp email requirements (eg_121019: inactive)
-SES_SERVER = 'nil'
-SES_PORT = 'nil'
-SES_FROMADDR = 'nil'
-SES_LOGIN = 'nil'
-SES_PASSWORD = 'nil'
-
-corp_admin_email = 'nil'
-corp_recept_email = 'nil'
-admin_email = 'nil'
-
-#============================================================================#
 ## .env support
 #============================================================================#
 import os
@@ -63,6 +51,20 @@ sender_address_2 = os.environ['PUBLIC_KEY_5']
 sender_secret_2 = os.environ['PRIVATE_KEY_5']
 sender_address_3 = os.environ['PUBLIC_KEY_6']
 sender_secret_3 = os.environ['PRIVATE_KEY_6']
+
+#============================================================================#
+## Misc smtp email requirements (house_121032: simple_email.py -> gastracker.py)
+#============================================================================#
+SES_SERVER = os.environ['SES_SERVER']
+SES_PORT = os.environ['SES_PORT']
+SES_LOGIN = os.environ['SES_LOGIN']
+SES_PASSWORD = os.environ['SES_PASSWORD']
+SENDER_EMAIL = os.environ['SENDER_EMAIL']
+LST_RECEIVERS = [os.environ['RECEIVERS_0'], os.environ['RECEIVERS_1']]
+
+corp_admin_email = 'nil'
+corp_recept_email = 'nil'
+admin_email = 'nil'
 
 #============================================================================#
 ## web3 constants
