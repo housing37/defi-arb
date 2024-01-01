@@ -2,6 +2,105 @@
 
 ## SOLIDITY_KB
 
+### compiling warning - code size
+    //  remix error....
+    /** 
+        Warning: Contract code size is 50685 bytes and exceeds 24576 bytes (a limit introduced in Spurious Dragon). This contract may not be deployable on Mainnet. Consider enabling the optimizer (with a low "runs" value!), turning off revert strings, or using libraries.
+        --> contracts/gta.sol:52:1:
+        |
+        52 | contract GamerTokeAward is ERC20, Ownable {
+        | ^ (Relevant source part starts here and spans across multiple lines).
+
+        StructDefinition
+        contracts/gta.sol 150:4
+
+    */
+### compiling error: 'stack too deep'
+    ref: https://medium.com/aventus/stack-too-deep-error-in-solidity-5b8861891bae
+    ref: https://github.com/ethereum/solidity/blob/c492d9be00c843b8390959bd9f203c4047cb9f69/libevmasm/Exceptions.h
+    ref: https://ethereum.stackexchange.com/a/6065
+    example issue (GTA.sol) ... one struct can only handle 12 local vars of size uint256
+        mapping(address => Game) public activeGames1;
+        struct Game {                
+                /** EVENT SUPPORT - mostly host set */
+                uint256 createTime;     // 'createGame'
+                uint256 createBlockNum; // 'createGame'
+                uint256 startTime;      // host scheduled start time
+                uint256 launchTime;     // 'hostStartEvent'
+                uint256 launchBlockNum; // 'hostStartEvent'
+                uint256 endTime;        // 'hostEndGameWithWinners'
+                uint256 endBlockNum;    // 'hostEndGameWithWinners'
+                uint256 expTime;        // expires if not launched by this time
+                uint256 expBlockNum;    // 'cancelEventProcessRefunds'
+
+                uint256 startTime1;      // host scheduled start time
+                uint256 launchTime1;     // 'hostStartEvent'
+                uint256 launchBlockNum1; // 'hostStartEvent'
+                // uint256 launchBlockNum12; // 'hostStartEvent'
+                // uint256 launchBlockNum123; // 'hostStartEvent'
+                // uint256 endTime1;        // 'hostEndGameWithWinners'
+            }   
+    ref: https://ethereum.stackexchange.com/questions/6061/error-while-compiling-stack-too-deep
+    ref: https://ethereum.stackexchange.com/a/6065
+        CommonSubexpressionEliminator.cpp and CompilerUtils.cpp:
+            assertThrow(instructionNum <= 16, StackTooDeepException, "Stack too deep, try removing local variables.");
+        ContractCompiler.cpp:
+            solAssert(stackLayout.size() <= 17, "Stack too deep, try removing local variables.");
+    
+
+    CompilerError: Stack too deep. Try compiling with `--via-ir` (cli) or the equivalent `viaIR: true` (standard JSON) while enabling the optimizer. Otherwise, try removing local variables.
+
+    possible fix:
+        add to json...
+            "": ["ast", "ir"],
+        total json exmaple from remix
+        {
+            "language": "Solidity",
+            "settings": {
+                "optimizer": {
+                    "enabled": true,
+                    "runs": 200
+                },
+                "outputSelection": {
+                    "*": {
+                        "": ["ast", "ir"],
+                        "*": ["abi", "metadata", "devdoc", "userdoc", "storageLayout", "evm.legacyAssembly", "evm.bytecode", "evm.deployedBytecode", "evm.methodIdentifiers", "evm.gasEstimates", "evm.assembly"]
+                    }
+                }
+            }
+        }
+
+### array initializations (chatGPT)
+    // Example array initialization:
+    int[5] public intArray; // All elements are initialized to 0
+    bool[3] public boolArray; // All elements are initialized to false
+    address[2] public addressArray; // All elements are initialized to address(0)
+
+    // Example array initialization:
+    int[] public dynamicIntArray; // Uninitialized elements are set to 0
+    bool[] public dynamicBoolArray; // Uninitialized elements are set to false
+    address[] public dynamicAddressArray; // Uninitialized elements are set to address(0)
+
+    // Example array initialization with struct:
+    struct MyStruct {
+        uint256 value;
+        bool flag;
+    }
+    MyStruct[3] public structArray; // Each element is a zero-initialized struct
+
+
+### data locations (chatGPT)
+    1) Memory (memory):
+        - Used for variables that are temporary and will not persist between (external) function calls.
+        - Memory is more limited compared to storage but is less expensive in terms of gas costs.
+    2) Calldata (calldata):
+        - Used for function arguments and return parameters.
+        - It is a non-modifiable, read-only area where function arguments are stored.
+        - It's cheaper than storage and memory but has some limitations, such as not supporting complex data structures like arrays.
+    3) storage
+        - In Solidity, when you declare a storage reference to a struct, you are essentially working directly with the storage slot that the struct occupies. Modifying the existingGame will directly affect the state stored in activeGames[gameCode].
+        - The storage keyword is only used for state variables and not for function parameters
+
 ### solidity native 'block' object attributes (chatGPT)
     In Solidity, you can access various information about the current block using the block global variable. Here are some of the attributes of the block object:
 
@@ -251,9 +350,12 @@
     In Solidity, there are various function modifiers and decorators that can change the behavior of a function. Here's a list of some common ones:
 
     1. Visibility Modifiers:
-       - `public`: The function can be called from anywhere.
+       - `public`: The function can be called from anywhere (internal & extrenal). 
+            - auto-generates a getter function with the same name to allow access to the state variable's value from outside the contract.
+            - May have higher gas costs for external calls due to the additional context-switching overhead.
        - `internal`: The function can only be called from within the current contract or derived contracts.
        - `external`: The function can be called from outside the contract and other contracts.
+            - more gas-efficient when called externally: skips the context-switching overhead associated with internal function calls.
        - `private`: The function can only be called from within the current contract.
        - `virutal`: function can be overridden
             "When a function is marked as virtual in a base contract, it means that the function can be overridden by functions with the same signature in derived contracts"
