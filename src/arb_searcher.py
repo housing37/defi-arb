@@ -341,7 +341,7 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                                 sell_dex = lst_symbs[3]
                                 sell_pair_addr = quote[0]
                             str_tweet = f"#PulseChain Arbitrage available ... {diff_perc:,.2f}% up for grabs\n\n first buy ${buy_tok} on #{buy_dex} (${buy_price:,.6f})\n then sell ${sell_tok} on #{sell_dex} (${sell_price:,.6f})\n\n pair_addresses:\n  {buy_pair_addr}\n  {sell_pair_addr}"
-                            print('TWEET...\n'+str_tweet)
+                            print('TWEET...\n'+str_tweet+'\n')
 
                     DICT_ALL_SYMBS[addr][-1].append([pair_addr, quote_tok_symb, quote_tok_addr, liquid, price_nat, price_usd])
                     #[print(k, DICT_ALL_SYMBS[k]) for k in DICT_ALL_SYMBS.keys()]
