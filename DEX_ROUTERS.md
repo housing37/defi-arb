@@ -18,6 +18,10 @@
                  (on PC -> for USDC, but indeed succeeds for WETH)
 
 ## PulseChain dex routers
+    DEX: gopulse (maybe)
+     addr: 0x607015EC03b0e2300520175a231c03155b8E1A48
+     ref: approval on https://gopulse.com/x
+     
     DEX: 9mm
      ref: https://v3.9mm.pro/
      
@@ -30,6 +34,7 @@
     DEX: pulseX
         addr: 0x98bf93ebf5c380C0e6Ae8e192A7e2AE08edAcc02 // pulsex router_v1 
         addr: 0x165C3410fC91EF562C50559f7d2289fEbed552d9 // pulsex router_v2
+        addr: 0xa619F23c632CA9f36CD4Dcea6272E1eA174aAC27 // PulseXSwapRouter 'v1' ref: MM tx
     
     DEX: pulse-rate (found in arb_seercher logs, no research yet)
 

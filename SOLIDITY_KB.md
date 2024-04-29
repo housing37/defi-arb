@@ -2,6 +2,127 @@
 
 ## SOLIDITY_KB
 
+## INDEX ##
+### uniswapv2 remove liquidity failure
+### gas costs calculations per operation 
+### blockchain mempool (tx_pool) data... (chatGPT)
+### abstract contracts
+### compiling warning - code size
+### compiling error: 'stack too deep'
+### array initializations (chatGPT)
+### data locations (chatGPT)
+### solidity native 'block' object attributes (chatGPT)
+### Upgradeability patterns: Transparent Proxy vs. UUPS (Universal Upgradeable Proxy System) _ chatGPT
+### checking for existing mappings
+### using 'memory' isntead of 'storage'
+### UINT storage sizes (chatGPT)
+### indexing event parameters (chatGPT)
+### Common solidity functions mapped to hex values (that you see in the block explorer)
+### FUNCTION MODIFIERS & DECORATORS
+
+## KB ##
+### uniswapv2 remove liquidity failure
+    - 042823: came across inseteance where i couldn't remove LP for TBF13.1,2
+    - turns out i just needed to change 'details' in the pulseX remove UI
+        needed to set to receive WPLS instead of PLS
+    - ref: https://support.uniswap.org/hc/en-us/articles/20981158150029-I-can-t-remove-my-liquidity-position
+    
+### stack too deep error ###
+    solidity compiler (vscode) error:
+        CompilerError: Stack too deep. Try compiling with `--via-ir` (cli) or the equivalent `viaIR: true` (standard JSON) while enabling the optimizer. Otherwise, try removing local variables.
+
+    chatGPT answer:
+        The "Stack too deep" error in Solidity occurs when the number of local variables, function parameters, or expressions within a single function exceeds the compiler's limit for the stack size. Solidity imposes a limit on the size of the execution stack to prevent potential stack overflow issues.
+
+        Here's some general information about this error:
+
+        1. **Cause**: This error usually occurs when a function has too many local variables, function parameters, or nested expressions, causing the compiler to exceed its stack size limit.
+
+        2. **Limitations**: Solidity imposes a limit on the stack size to ensure efficient execution and prevent potential security vulnerabilities such as stack overflow attacks. The exact limit may vary depending on the Solidity version and compiler settings.
+
+        3. **Resolution**:
+        - **Reduce Complexity**: Simplify the function by breaking it down into smaller, more manageable functions. This can help reduce the number of local variables and expressions within each function.
+        - **Remove Unnecessary Variables**: Remove any unnecessary local variables or function parameters to reduce the stack size.
+        - **Optimize Code**: Optimize the code to minimize the number of nested expressions or function calls within the function.
+        - **Compiler Flags**: Use compiler flags such as `--via-ir` or `viaIR: true` to enable intermediate representation (IR) optimization, which may help mitigate the stack size issue.
+        - **Enable Optimizer**: Enable the optimizer (`--optimize` flag) to allow the compiler to optimize the generated code, potentially reducing the stack size.
+        
+        4. **Compiler Options**: Solidity provides various compiler options and settings that can be adjusted to optimize code generation and mitigate stack size issues. Experimenting with different settings and compiler flags may help resolve the error.
+
+        5. **Version Compatibility**: Ensure that the Solidity version you're using is compatible with the compiler options and settings you're applying. Newer Solidity versions may have different default settings or optimizations that affect stack size.
+
+        Overall, the "Stack too deep" error requires careful analysis of the affected code and may involve a combination of code restructuring, optimization, and adjusting compiler settings to resolve.
+
+### gas costs calculations per operation 
+    Certainly! Here's a more technical breakdown of the gas costs for common operations in Solidity:
+    These gas costs are crucial for developers to consider when designing and optimizing smart contracts for efficiency and cost-effectiveness on the Ethereum blockchain.
+        SLOAD: Gas cost for loading a word (32 bytes) from storage - 200 gas. It reads a value from contract storage.
+        SSTORE: Gas cost for storing a word (32 bytes) to storage - Variable depending on the context. 
+            For a new storage slot, it's 20,000 gas. For updating an existing slot from zero to non-zero, it's 5,000 gas. For updating an existing slot from non-zero to zero, a refund of 15,000 gas is issued.
+        CALL: Gas cost for making an external function call - 700 gas plus additional gas for the execution of the called contract. 
+            It includes the overhead of setting up the call and performing the necessary state changes.
+        CREATE: Gas cost for creating a new contract - 32,000 gas plus additional gas for the execution of the contract's constructor. 
+            This covers the cost of deploying a new contract and executing its constructor code.
+        LOG0 - LOG4: Gas cost for logging events - 375 gas per LOG operation plus 8 gas per byte for the log data. 
+            This is used to emit events from a contract, which can be observed by external applications.
+        EXP: Gas cost for exponentiation - 10 gas per byte of exponent. 
+            It calculates exponentiation, with the gas cost increasing with the size of the exponent.
+        MUL, DIV, ADD, SUB: Gas costs for arithmetic operations - 3 gas each. These operations perform basic arithmetic, 
+            such as multiplication, division, addition, and subtraction, with a fixed gas cost per operation.
+        JUMP: Gas cost for a jump operation - 8 gas per jump destination. This is used for unconditional jumps within the contract code.
+        JUMPI: Gas cost for a conditional jump operation - 10 gas per jump destination plus 2 gas if the condition is true. 
+            It evaluates a condition and jumps to a specified destination based on the result.
+        SHA3: Gas cost for the SHA3 operation (Keccak-256 hash) - 30 gas per word (32 bytes, rounded up). It calculates the Keccak-256 hash of input data.
+        REVERT: Gas cost for reverting a transaction - 0 gas (but the remaining gas is refunded). 
+            This is used to revert the changes made by a transaction and stop execution.
+
+
+### blockchain mempool (tx_pool) data... (chatGPT)
+    The dictionaries that come back from the transaction pool (tx_pool) represent different categories of transactions awaiting processing. Here's a brief overview of each:
+
+        Base Fee Transactions (base_fee):
+            These transactions are likely to be included in the next block to be mined.
+            They typically offer a base fee that miners can accept to include them in the block they're currently mining.
+            Base fee transactions are usually prioritized over pending and queued transactions.
+        Pending Transactions (pending):
+            Pending transactions are those that have been broadcasted to the network but have not yet been included in a block.
+            They are waiting for miners to pick them up and include them in the blockchain.
+            Pending transactions may have varying gas prices and other parameters that determine their priority.
+        Queued Transactions (queued):
+            Queued transactions are similar to pending transactions but may have lower priority.
+            These transactions are typically awaiting processing after pending transactions.
+            Queued transactions may have longer wait times before being included in a block compared to pending transactions.
+
+    In the JSON output you provided, the "type" field represents the type of transaction. 
+        In Ethereum, transactions can have different types, which are denoted by hexadecimal values. Here's what the "type" field signifies:
+
+        "0x0" typically represents a standard transaction.
+        "0x1" represents a contract creation transaction.
+        "0x2" represents a message call transaction.
+
+        In Ethereum, when you send a transaction, you can either send it to another address (a standard transaction), deploy a new contract (a contract creation transaction), or interact with an existing contract (a message call transaction).
+
+        So, the "type" field in the JSON output indicates the type of action that the transaction represents. It's useful for distinguishing between different kinds of transactions on the Ethereum blockchain.
+
+    In Ethereum transaction signatures, r, s, and v (not a) are components of the ECDSA signature scheme used to verify the authenticity of transactions. Here's what each component represents:
+
+        r: This component represents the x-coordinate of the resulting point 
+            after performing the elliptic curve multiplication during the signature generation process.
+        s: This component represents the signature itself and is used alongside r to ensure the uniqueness and authenticity of the signature.
+        v: This component is the recovery identifier. It is used to determine the public key that was 
+            used to create the signature. The value of v is typically 27 or 28, but it can also be 0 or 1 in some cases.
+
+        Together, r, s, and v constitute the signature of the transaction and are used to verify 
+            the authenticity of the transaction and ensure its integrity on the Ethereum blockchain.
+
+### abstract contracts
+    Here are the key points about abstract contracts in Solidity:
+
+    1) Cannot be Instantiated: You cannot create an instance of an abstract contract by itself. It is meant to be extended by other contracts.
+    2) May Contain Unimplemented Functions: Abstract contracts can have function declarations without providing the implementation. The purpose is to leave the implementation details to the contracts that inherit from the abstract contract.
+    3) Used for Code Reusability: Abstract contracts are often used to define a common set of functions and structure that multiple contracts may share. This promotes code reusability and helps in creating a modular codebase.
+    4) Interfaces are a Form of Abstract Contracts: Solidity interfaces are a specific type of abstract contract. They define function signatures without implementing any functionality. Contracts that implement an interface must provide the actual implementation for the functions defined in the interface.
+    
 ### compiling warning - code size
     //  remix error....
     /** 
