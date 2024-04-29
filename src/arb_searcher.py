@@ -55,7 +55,7 @@ def exe_dexscreener_request(url='nil_url'):
         
 def search_for_arb(t_addr='nil_', t_symb='nil_', t_name='nil_', chain_id='nil_', d_print=True):
     global NET_CALL_CNT
-    if d_print: print('', cStrDivider, f'Searching pairs recursively _ start T|{t_symb}: {t_addr} _ [{get_time_now()}]', cStrDivider, sep='\n')
+    if d_print: print('', cStrDivider, f'Searching pairs recursively _ start _ [{get_time_now()}]', f'  T|{t_symb}: {t_addr} ', cStrDivider, sep='\n')
     dict_all_symbs = scrape_dex_recurs(t_addr, t_symb, chain_id, {}, plog=False)
     #dict_all_symbs = scrape_dex_recurs_1(t_addr, t_symb, chain_id, {}, plog=False)
 
@@ -286,7 +286,8 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         lst_addr_ignore = ['0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', '0xBA485b556399123261a5F9c95d413B4f93107407']
                             # dexscreener misquotes / liquidity issues
                         base_addr_ok = base_tok_addr not in lst_addr_ignore
-                        quote_addr_ok = quote_tok_addr not in lst_addr_ignore and quote[2] not in lst_addr_ignore
+                        # quote_addr_ok = quote_tok_addr not in lst_addr_ignore and quote[2] not in lst_addr_ignore
+                        quote_addr_ok = quote_tok_addr == addr_wpls_pc == quote[2]
                         
                         # exclude dex 'balancer'
                         #dex_ok = not (dex_id == 'balancer' or lst_symbs[3] == 'balancer')

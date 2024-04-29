@@ -143,17 +143,40 @@ def go_main(run_default=True):
     ADDR_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
     
     ADDR_WHETH = '0xDe0220b69CE3e855a0124433A8E8D093f53A6bE4'
+    ADDR_SHIB = '0x3Ab667c153B8DD2248bb96E7A2e1575197667784'
+    ADDR_LUSD = '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
+    ADDR_pSHIB = '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'
     #========================================================#
 
-    get_lps(t_addr=ADDR_WETH,
-            t_symb='WETH',
-            eth_main=True,
-            d_print=True)
-    get_lps(t_addr=ADDR_USDC,
-            t_symb='USDC',
-            eth_main=True,
-            d_print=True)
+    #==== ETHEREUM MAIN NET =================================#
+        # get_lps(t_addr=ADDR_WETH,
+        #         t_symb='WETH',
+        #         eth_main=True,
+        #         d_print=True)
+        # get_lps(t_addr=ADDR_USDC,
+        #         t_symb='USDC',
+        #         eth_main=True,
+        #         d_print=True)
 
+    #==== PULSECHAIN =======================================#
+    get_lps(t_addr=ADDR_LUSD,
+            t_symb='LUSD',
+            eth_main=False,
+            d_print=True)
+    get_lps(t_addr=ADDR_pSHIB,
+            t_symb='pSHIB',
+            eth_main=False,
+            d_print=True)
+    
+    get_lps(t_addr=ADDR_SHIB,
+            t_symb='SHIB',
+            eth_main=False,
+            d_print=True)
+    
+    get_lps(t_addr=ADDR_SHIB,
+            t_symb='SHIB',
+            eth_main=False,
+            d_print=True)
     # *WARNING* 'WPLS' does not include pair: 0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS)
     print('\n\n', cStrDivider, "*** WARNING *** 'WPLS' does not include\n pair: 0xdB512C5c32B8975D1971BC24E4F389dbd0e05F65 (WETH:WPLS|v1)\n pair: 0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS|v2)", cStrDivider, sep='\n')
     get_lps(t_addr=addr_wpls,
