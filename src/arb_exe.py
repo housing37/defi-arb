@@ -15,7 +15,7 @@ import web3
 from ethereum.abi import encode_abi # pip install ethereum
 import env
 from _constants import *
-import eth_abi
+# import eth_abi
 #from web3.exceptions import ContractLogicError
 #import inspect # this_funcname = inspect.stack()[0].function
 #parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -84,8 +84,8 @@ print(f'''\nSetting gas params ...
 print(f'finalizing arb settings...')
 #ADDR_LOAN_TOK = ADDR_USDC # note_110423: USDC failes test balancer loan (pc)
 ADDR_LOAN_TOK = ADDR_WETH # note_110423: WETH success test balancer loan (pc)
-#AMNT_LOAN_TOK = 114983659 * 10**18 # max pc->balancer loan (114983659 WETH)
-AMNT_LOAN_TOK =  12_000_000 * 10**18 # max pc->balancer loan (114983659 WETH)
+#AMNT_LOAN_TOK = 114983659 * 10**18 # note_110723: max pc->balancer loan (114983659 WETH)
+AMNT_LOAN_TOK =  12_000_000 * 10**18 # note_110723: max pc->balancer loan (114983659 WETH)
 #14000000000000000000000000
 #17000000000000000000
 
@@ -143,7 +143,8 @@ def go_loan():
     routers = [l[0] for l in LST_ARB]
     paths = [l[1] for l in LST_ARB]
     data_to_encode = [routers, paths]
-    encoded_data = eth_abi.encode_abi(('address[]', 'address[][]'), data_to_encode)
+    # encoded_data = eth_abi.encode_abi(('address[]', 'address[][]'), data_to_encode)
+    encoded_data = encode_abi(('address[]', 'address[][]'), data_to_encode)
 
     print(f'setting function call...\n loan tokens: {lst_tok_addr}\n loan amounts: {[f"{(x / 10**18):,}" for x in lst_tok_amnt]} ({AMNT_LOAN_TOK})\n encoded_data: {encoded_data.hex()}\n')
     flash_loan_function = CONTR_ARB.functions.makeFlashLoan(
@@ -165,7 +166,7 @@ def go_loan():
     tx_params = {
         'chainId':CHAIN_ID, # required
         'from': ACCOUNT.address,
-        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+        'nonce': W3.eth.get_transaction_count(ACCOUNT.address),
     }
     
     print('setting gas params...')
@@ -236,7 +237,7 @@ def go_transfer():
         #'gas': 2000000,  # Adjust gas limit as needed
         #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
         "gas": 20_000_000,  # Adjust the gas limit as needed
-        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+        'nonce': W3.eth.get_transaction_count(ACCOUNT.address),
         'data': CONTR_ARB.encodeABI(fn_name='transferTokens', args=[addr_pdai, SENDER_ADDRESS, 1 * 10**18]),
         
     }
@@ -289,7 +290,7 @@ def go_withdraw():
         #'gas': 2000000,  # Adjust gas limit as needed
         #'gasPrice': W3.toWei('20', 'gwei'),  # Adjust gas price as needed
         "gas": 20_000_000,  # Adjust the gas limit as needed
-        'nonce': W3.eth.getTransactionCount(ACCOUNT.address),
+        'nonce': W3.eth.get_transaction_count(ACCOUNT.address),
         'data': CONTR_ARB.encodeABI(fn_name='withdraw', args=[10 * 10**18]),
         
     }

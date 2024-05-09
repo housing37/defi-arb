@@ -131,7 +131,7 @@ def go_main(run_default=True):
     
     addr_write = '0x26D5906c4Cdf8C9F09CBd94049f99deaa874fB0b' # ޖޮޔިސްދޭވޯހީ (write) $M price token
     addr_r = '0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622'
-    addr_bear9 = '0x1f737F7994811fE994Fe72957C374e5cD5D5418A'
+    addr_bear9 = '0x1f737F7994811fE994Fe72957C374e5cD5D5418A' # テディベア
     
     addr_wenti = '0xA537d6F4c1c8F8C41f1004cc34C00e7Db40179Cc' # '问题 (问题) _ wenti'
     
@@ -159,80 +159,106 @@ def go_main(run_default=True):
         #         d_print=True)
 
     #==== PULSECHAIN =======================================#
-    get_lps(t_addr=ADDR_LUSD,
-            t_symb='LUSD',
-            eth_main=False,
-            d_print=True)
-    get_lps(t_addr=ADDR_pSHIB,
-            t_symb='pSHIB',
-            eth_main=False,
-            d_print=True)
+#     get_lps(t_addr=ADDR_LUSD,
+#             t_symb='LUSD',
+#             eth_main=False,
+#             d_print=True)
+#     get_lps(t_addr=ADDR_pSHIB,
+#             t_symb='pSHIB',
+#             eth_main=False,
+#             d_print=True)
+#     get_lps(t_addr=ADDR_SHIB,
+#             t_symb='SHIB',
+#             eth_main=False,
+#             d_print=True)
     
-    get_lps(t_addr=ADDR_SHIB,
-            t_symb='SHIB',
-            eth_main=False,
-            d_print=True)
-    
-    get_lps(t_addr=ADDR_SHIB,
-            t_symb='SHIB',
-            eth_main=False,
-            d_print=True)
     # *WARNING* 'WPLS' does not include pair: 0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS)
     print('\n\n', cStrDivider, "*** WARNING *** 'WPLS' does not include\n pair: 0xdB512C5c32B8975D1971BC24E4F389dbd0e05F65 (WETH:WPLS|v1)\n pair: 0x7994d526A127979BcB9Ec7C98509BB5C7ebD78FD (WETH:WPLS|v2)", cStrDivider, sep='\n')
-    get_lps(t_addr=addr_wpls,
-            t_symb='WPLS',
-            eth_main=False,
-            d_print=True)
-    get_lps(t_addr=ADDR_WHETH,
-            t_symb='WHETH',
-            eth_main=False,
-            d_print=True)
+#     get_lps(t_addr=addr_wpls,
+#             t_symb='WPLS',
+#             eth_main=False,
+#             d_print=True)
+#     get_lps(t_addr=ADDR_WHETH,
+#             t_symb='WHETH',
+#             eth_main=False,
+#             d_print=True)
             
-    get_lps(t_addr=addr_pdai,
-            t_symb='pDAI',
-            d_print=True)
-    get_lps(t_addr=addr_legal,
-            t_symb='LEGAL',
-            d_print=True)
-    get_lps(t_addr=addr_ojeon,
-            t_symb='OJEON',
-            d_print=True)
-    get_lps(t_addr=addr_ying,
-            t_symb='YING',
-            d_print=True)
-    get_lps(t_addr=addr_lol,
-            t_symb='LOL',
-            d_print=True)
-    get_lps(t_addr=addr_treas,
-            t_symb='TREAS',
-            d_print=True)
-    get_lps(t_addr=addr_bul8,
-            t_symb='BUL8',
-            d_print=True)
-    get_lps(t_addr=addr_bond,
-            t_symb='BOND',
-            d_print=True)
-    get_lps(t_addr=addr_caw,
-            t_symb='CAW',
-            d_print=True)
-    get_lps(t_addr=addr_tsfi,
-            t_symb='TSFi',
-            d_print=True)
-    get_lps(t_addr=addr_atrop,
-            t_symb='ATROPA',
-            d_print=True)
-    get_lps(t_addr=addr_bear,
-            t_symb='BEAR',
-            d_print=True)
-    get_lps(t_addr=addr_write,
-            t_symb='WRITE',
-            d_print=True)
-    get_lps(t_addr=addr_r,
-            t_symb='"R"',
-            d_print=True)
-    get_lps(t_addr=addr_bear9,
-            t_symb='BEAR9',
-            d_print=True)
+#     get_lps(t_addr=addr_pdai,
+#             t_symb='pDAI',
+#             d_print=True)
+#     get_lps(t_addr=addr_legal,
+#             t_symb='LEGAL',
+#             d_print=True)
+#     get_lps(t_addr=addr_ojeon,
+#             t_symb='OJEON',
+#             d_print=True)
+#     get_lps(t_addr=addr_ying,
+#             t_symb='YING',
+#             d_print=True)
+#     get_lps(t_addr=addr_lol,
+#             t_symb='LOL',
+#             d_print=True)
+#     get_lps(t_addr=addr_treas,
+#             t_symb='TREAS',
+#             d_print=True)
+#     get_lps(t_addr=addr_bul8,
+#             t_symb='BUL8',
+#             d_print=True)
+#     get_lps(t_addr=addr_bond,
+#             t_symb='BOND',
+#             d_print=True)
+#     get_lps(t_addr=addr_caw,
+#             t_symb='CAW',
+#             d_print=True)
+#     get_lps(t_addr=addr_tsfi,
+#             t_symb='TSFi',
+#             d_print=True)
+#     get_lps(t_addr=addr_atrop,
+#             t_symb='ATROPA',
+#             d_print=True)
+#     get_lps(t_addr=addr_bear,
+#             t_symb='BEAR',
+#             d_print=True)
+#     get_lps(t_addr=addr_write,
+#             t_symb='WRITE',
+#             d_print=True)
+#     get_lps(t_addr=addr_r,
+#             t_symb='"R"',
+#             d_print=True)
+#     get_lps(t_addr=addr_bear9,
+#             t_symb='BEAR9',
+#             d_print=True)
+    
+    lst_tok_info = [
+                {'t_symb':'WPLS','t_addr':'0xA1077a294dDE1B09bB078844df40758a5D0f9a27'},
+                {'t_symb':'pDAI','t_addr':'0x6B175474E89094C44Da98b954EedeAC495271d0F'},
+
+                {'t_symb':'BEAR9 (テディベア)','t_addr':'0x1f737F7994811fE994Fe72957C374e5cD5D5418A'},
+
+                {'t_symb':'pDOLA','t_addr':'0x865377367054516e17014CcdED1e7d814EDC9ce4'},
+                {'t_symb':'pBAL','t_addr':'0xba100000625a3754423978a60c9317c58a424e3D'},
+                {'t_symb':'pAAVE','t_addr':'0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9'},
+                {'t_symb':'prETH','t_addr':'0xae78736cd615f374d3085123a210448e74fc6393'},
+                {'t_symb':'pUSDC','t_addr':'0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'},
+                {'t_symb':'pUSDT','t_addr':'0xdAC17F958D2ee523a2206206994597C13D831ec7'},
+                
+                {'t_symb':'pWETH','t_addr':'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'},
+                {'t_symb':'pWBTC','t_addr':'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'},
+
+                {'t_symb':'ATROPA','t_addr':'0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6'},
+                {'t_symb':'TSFi','t_addr':'0x4243568Fa2bbad327ee36e06c16824cAd8B37819'},
+                {'t_symb':'"R"','t_addr':'0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622'},
+        ]
+    
+    print('\n\n\n',cStrDivider, 'STARTING LOOPED GET', cStrDivider, sep='\n')
+    for v in lst_tok_info:
+        get_lps(t_addr=v['t_addr'],
+                t_symb=v['t_symb'],
+                d_print=True)
+    
+    
+    
+    
     
     ## OG algorithm -> "atropa-kb-priv/_src/map_route.py"
     #find_comm_toks_lvl_1(pt_addr=addr_bear,

@@ -8,7 +8,18 @@ import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 contract BalancerFLR_test is IFlashLoanRecipient {
     // ref: https://docs.balancer.fi/reference/contracts/flash-loans.html#example-code
     IVault private constant vault = IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-    
+    // pWETH: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 -> 203658647860394116213752201 / 10**18 == 203658647.86039412 ~= $12,228.2445082
+    // pUSDC: 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 -> 23937491402753 / 10**6 == 23937491.402753 ~= $74,767.781978741
+    // pWBTC: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599 -> 5994742939 / 10**8 == 59.94742939 ~= $13,208.5705829
+    // pUSDT: 0xdAC17F958D2ee523a2206206994597C13D831ec7 -> 13296690613518 / 10**6 == 13296690.613518 ~= $39,213.741269448
+
+    // pDOLA: 0x865377367054516e17014CcdED1e7d814EDC9ce4 -> 30614508079920854526255527 / 10**18 ~= $236.198849851
+    // pAAVE: 0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9 -> 2114928347848533872595 / 10**18 ~= $280.453860038
+
+    // ERROR: LIQUIDITY < BALANCE
+    // pBAL: 0xba100000625a3754423978a60c9317c58a424e3D ->  3946496821522180948639451 / 10**18 == 3946496.821522181 ~= $41,153.679623988
+    // prETH: 0xae78736cd615f374d3085123a210448e74fc6393 -> 27843230642023975590639 / 10**18 ~= $8,067.713537987
+
     address private constant balancerRouter = address(0x37);
     address public _owner;
 
@@ -48,7 +59,7 @@ contract BalancerFLR_test is IFlashLoanRecipient {
         require(msg.sender == address(vault), "loan from vault only");
         
         emit logRFL(address(this), msg.sender, "logRFL 1");
-        (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
+        // (address router_0, address router_1, address[] memory path_0, address[] memory path_1, uint256 amntIn_0, uint256 amntOutMin_1) = abi.decode(userData, (address, address, address[], address[], uint256, uint256));
         
         emit logRFL(address(this), msg.sender, "logRFL 2");
         uint256 bal = tokens[0].balanceOf(address(this));

@@ -49,10 +49,10 @@ print('getting keys and setting globals ...')
 ## SETTINGS ##
 #abi_file = "../contracts/BalancerFLR.json"
 #bin_file = "../contracts/BalancerFLR.bin"
-#abi_file = "../contracts/BalancerFLR_test.json"
-#bin_file = "../contracts/BalancerFLR_test.bin"
-abi_file = "../contracts/BalancerFLR_pc.json"
-bin_file = "../contracts/BalancerFLR_pc.bin"
+abi_file = "../contracts/BalancerFLR_test.json"
+bin_file = "../contracts/BalancerFLR_test.bin"
+# abi_file = "../contracts/BalancerFLR_pc.json"
+# bin_file = "../contracts/BalancerFLR_pc.bin"
 LST_CONTR_ARB_ADDR = [
     "0x59012124c297757639e4ab9b9e875ec80a5c51da", # deployed eth main 102823_1550
     "0x48af7d501bca526171b322ac2d8387a8cf085850", # deployed eth main 102823_2140
@@ -69,6 +69,9 @@ LST_CONTR_ARB_ADDR = [
     "0xD0283328BC73E624Ccac40f138bb620287c0EC76", # deployed pc main 110623_1006 (TEST-ARB)
     "0x302CC7e8ffc8361c84b21450bAB7e018E41359c3", # deployed pc main 110623_1025 (TEST-ARB)
     "0xEE123F711176E22Ebb98eD5951c640722703BEf7", # deployed pc main 110623_1122 (TEST-ARB)
+
+    # NOTE_050624: started new flashloans testing (used in bear-shares/src/_keeper.py)
+    "0x0bc9AE8Ddcd96D6bE48C507B2B59C1dbC1Bc22fa", # deployed PC main ../bin/receipts/deploy_FLR_test_050624_2259_0.txt
 ]
 #------------------------------------------------------------#
 
