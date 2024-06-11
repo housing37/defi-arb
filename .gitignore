@@ -1,6 +1,14 @@
 ###############################
 # house_102323 (model house_091223)
 ###############################
+## vscode
+.vscode/
+
+## solidity & npm support
+bin/
+node_modules/
+package-lock.json
+
 ## misc OSx
 *~
 .#.*
@@ -26,8 +34,12 @@ logs/
 ## hide posts ##
 posts/
 
+## hide wallets ##
+_wallets/
+
 ## hide environmentals
 .env*
+pkg-*/
 
 ## hide legacy helpers
 _legacy/
