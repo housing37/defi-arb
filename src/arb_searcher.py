@@ -28,9 +28,10 @@ ARB_OPP_CNT = 0
 DIFF_PERC_HIGH = 0
 
 RUN_TIME_START = None
-USD_DIFF = 0.0000001 # higher value = more low val tokens skipped
-USD_LIQ_REQ = 500
-PERC_DIFF = 2
+USD_DIFF = 0.0000001 # higher value = more low val tokens ignored
+USD_LIQ_REQ = 1000 # lower value LPs ignored
+PERC_DIFF = 5 # lower USD|NATIVE price % diff ignored
+PERC_DIFF_NAT = True # use native token for 'PERC_DIFF'
 
 # for net requests:
 #   0.1 = ~200/min | 0.05 = ~240/min (stalls sometimes)
@@ -277,7 +278,8 @@ def scrape_dex_recurs(tok_addr, tok_symb, chain_id, DICT_ALL_SYMBS={}, plog=True
                         diff_usd = float(price_usd) - float(quote[-1])
                         diff_perc = abs(1 - (float(quote[-1]) / float(price_usd))) * 100
                         usd_diff_ok = diff_usd >= USD_DIFF or diff_usd <= -USD_DIFF
-                        perc_diff_ok = diff_perc >= PERC_DIFF
+                        # perc_diff_ok = diff_perc >= PERC_DIFF # perc of USD value
+                        perc_diff_ok = diff_perc_nat >= PERC_DIFF if PERC_DIFF_NAT else diff_perc >= PERC_DIFF # use perc of usd|native value
                         
                         # exclude arb from same dex/ver combo
                         dex_vers_ok = dex_id != lst_symbs[3] and labels[0] != lst_symbs[4][0]
@@ -424,6 +426,12 @@ def go_main():
     else:
         LST_CHAIN_PARAMS.append(['ethereum','WETH',addr_weth_eth])
         LST_CHAIN_PARAMS.append(['pulsechain','WPLS',addr_wpls_pc])
+
+    print()
+    print(f'Settings ... ', f'USD_DIFF={USD_DIFF:.7f} -> (higher value = more low val tokens ignored)', f'USD_LIQ_REQ={USD_LIQ_REQ}     -> (lower value LPs ignored)', f'PERC_DIFF={PERC_DIFF}          -> (lower USD price % diff ignored)', f'PERC_DIFF_NAT={PERC_DIFF_NAT} -> (use native or usd value for PERC_DIFF check)', sep='\n ')
+# USD_DIFF = 0.0000001 # higher value = more low val tokens skipped
+# USD_LIQ_REQ = 500
+# PERC_DIFF = 2
 
     lst_d = []
     addr = symb = chain = 'nil'

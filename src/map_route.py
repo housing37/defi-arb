@@ -230,10 +230,8 @@ def go_main(run_default=True):
 #             d_print=True)
     
     lst_tok_info = [
-                {'t_symb':'WPLS','t_addr':'0xA1077a294dDE1B09bB078844df40758a5D0f9a27'},
+                
                 {'t_symb':'pDAI','t_addr':'0x6B175474E89094C44Da98b954EedeAC495271d0F'},
-
-                {'t_symb':'BEAR9 (テディベア)','t_addr':'0x1f737F7994811fE994Fe72957C374e5cD5D5418A'},
 
                 {'t_symb':'pDOLA','t_addr':'0x865377367054516e17014CcdED1e7d814EDC9ce4'},
                 {'t_symb':'pBAL','t_addr':'0xba100000625a3754423978a60c9317c58a424e3D'},
@@ -243,11 +241,17 @@ def go_main(run_default=True):
                 {'t_symb':'pUSDT','t_addr':'0xdAC17F958D2ee523a2206206994597C13D831ec7'},
                 
                 {'t_symb':'pWETH','t_addr':'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'},
-                {'t_symb':'pWBTC','t_addr':'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'},
-
+                
+                {'t_symb':'WPLS','t_addr':'0xA1077a294dDE1B09bB078844df40758a5D0f9a27'},
                 {'t_symb':'ATROPA','t_addr':'0xCc78A0acDF847A2C1714D2A925bB4477df5d48a6'},
                 {'t_symb':'TSFi','t_addr':'0x4243568Fa2bbad327ee36e06c16824cAd8B37819'},
                 {'t_symb':'"R"','t_addr':'0x557F7e30aA6D909Cfe8a229A4CB178ab186EC622'},
+                {'t_symb':'pWBTC','t_addr':'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'},
+                {'t_symb':'BEAR9 (テディベア)','t_addr':'0x1f737F7994811fE994Fe72957C374e5cD5D5418A'},
+
+                {'t_symb':'第作 (笫第作笈)','t_addr':'0x347BC40503E0CE23fE0F5587F232Cd2D07D4Eb89'},
+
+                {'t_symb':'pLUSD','t_addr':'0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'},
         ]
     
     print('\n\n\n',cStrDivider, 'STARTING LOOPED GET', cStrDivider, sep='\n')
