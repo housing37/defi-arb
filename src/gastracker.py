@@ -62,26 +62,26 @@ def go_tracker(enable_alert=False):
 
         if dict_resp['message'].lower() == 'ok':
             results = dict_resp['result']
-            high = int(results['FastGasPrice'])
-            avg = int(results['ProposeGasPrice'])
-            low = int(results['SafeGasPrice'])
+            high = float(results['FastGasPrice'])
+            avg = float(results['ProposeGasPrice'])
+            low = float(results['SafeGasPrice'])
             sbf = float(results['suggestBaseFee'])
             b_new_low = b_new_high = False
             
             #iGWEI_LOW = f'{low} {[iTRACK_CNT]}' if low < iGWEI_LOW or iGWEI_LOW == -1 else iGWEI_LOW
             if low < iGWEI_LOW or iGWEI_LOW == -1:
                 iGWEI_LOW = low
-                str_gwei_low = f'lo{[iTRACK_CNT]}: {low}'
+                str_gwei_low = f'lo{[iTRACK_CNT]}: {low:.2f}'
                 b_new_low = True
             
             #iGWEI_HIGH = f'{high} {[iTRACK_CNT]}' if high > iGWEI_HIGH else iGWEI_HIGH
             if high > iGWEI_HIGH:
                 iGWEI_HIGH = high
-                str_gwei_high = f'hi{[iTRACK_CNT]}: {high}'
+                str_gwei_high = f'hi{[iTRACK_CNT]}: {high:.2f}'
                 b_new_high = True
                 
             time_now = get_time_now(timeconv=True, timeonly=True)
-            p_data = f'{time_now} _ [{iTRACK_CNT}*]   {low}   |   {avg}   |   {high}   |   {sbf:.2f} | alert: {iGWEI_ALERT}gwei, {str_gwei_low}, {str_gwei_high}'
+            p_data = f'{time_now} _ [{iTRACK_CNT}*]  {low:.2f}  |  {avg:.2f}  |  {high:.2f}  |  {sbf:.2f} | alert: {iGWEI_ALERT}gwei, {str_gwei_low}, {str_gwei_high}'
             print(f'{p_data}')
             if enable_alert:
                 #valid_time_passed = iTRACK_CNT % iALERT_INTER == 0
