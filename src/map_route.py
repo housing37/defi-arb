@@ -258,6 +258,10 @@ def go_main(run_default=True):
                 {'t_symb':'MILADY','t_addr':'0xD100ecF770dC06D407787c3a991086a6E876Cc17'},
                 {'t_symb':'pDAI','t_addr':'0x6B175474E89094C44Da98b954EedeAC495271d0F'},
                 {'t_symb':'weDAI','t_addr':'0xefD766cCb38EaF1dfd701853BFCe31359239F305'},
+                {'t_symb':'(A)','t_addr':'0x24F0154C1dCe548AdF15da2098Fdd8B8A3B8151D'},
+                {'t_symb':'MV','t_addr':'0xA1BEe1daE9Af77dAC73aA0459eD63b4D93fC6d29'},
+
+                
         ]
     
     print('\n\n\n',cStrDivider, 'STARTING LOOPED GET', cStrDivider, sep='\n')
